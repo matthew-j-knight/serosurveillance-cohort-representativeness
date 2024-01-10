@@ -6,6 +6,10 @@ library(viridis)
 library(tidyverse)
 library(colorspace)
 library(cowplot)
+library(gridExtra)
+library(grid)
+library(lattice)
+theme_set(theme_bw())
 
 #CBS - extracted Nov 6 2023
 cbs_asr<-read.csv("./cbs_asr_nov62023_count.csv")
@@ -158,7 +162,8 @@ all_dtasu$pct_binned<-factor(case_when(
              "Proportion > 20%"))
 
 ggplot(all_dtasu,aes(x = sex, y = factor(age_groups,
-                                         levels = c("0-17 years",
+                                         levels = c("All ages",
+                                                    "0-17 years",
                                                     "18-39 years",
                                                     "40-54 years",
                                                     "55+ years")), 
@@ -172,7 +177,8 @@ ggplot(all_dtasu,aes(x = sex, y = factor(age_groups,
        x = "Sex")
 
 ggplot(all_dtasu,aes(x = sex, y = factor(age_groups,
-                                         levels = c("0-17 years",
+                                         levels = c("All ages",
+                                                    "0-17 years",
                                                     "18-39 years",
                                                     "40-54 years",
                                                     "55+ years")), 
@@ -196,17 +202,45 @@ censusu_asu18<-censusu18 %>% #to calculate rep ratio for cohorts with 18+
             FUN = sum,
             drop = F)
 
+censusu_asu18all<-censusu18 %>% 
+  mutate(sex = case_when(sex == "0" ~ "Female",
+                         sex == "1" ~ "Male"),
+         urban = case_when(urban == "0" ~ "Rural",
+                           urban == "1" ~ "Urban")) %>% 
+  aggregate(count_census ~ sex + urban,
+            FUN = sum,
+            drop = F)
+censusu_asu18all$age_groups<-"All ages"
+censusu_asu18<-rbind(censusu_asu18,censusu_asu18all)
+
+#write_csv(censusu_asu18,"census_allprov18+.csv")
+
 censusu_asu<-censusu %>% #to calculate rep ratio for national cohorts with all ages (CCAHS)
   mutate(age_groups = ifelse(age_groups == "< 18 years",
-                            "0-17 years",
-                            age_groups),
+                             "0-17 years",
+                             age_groups),
          sex = case_when(sex == "0" ~ "Female",
                          sex == "1" ~ "Male"),
          urban = case_when(urban == "0" ~ "Rural",
-                   urban == "1" ~ "Urban")) %>% 
+                           urban == "1" ~ "Urban")) %>% 
   aggregate(count_census ~ age_groups + sex + urban,
             FUN = sum,
             drop = F)
+
+censusu_asuall<-censusu %>% 
+  mutate(age_groups = ifelse(age_groups == "< 18 years",
+                             "0-17 years",
+                             age_groups),
+         sex = case_when(sex == "0" ~ "Female",
+                         sex == "1" ~ "Male"),
+         urban = case_when(urban == "0" ~ "Rural",
+                           urban == "1" ~ "Urban")) %>% 
+  aggregate(count_census ~ sex + urban,
+            FUN = sum,
+            drop = F)
+censusu_asuall$age_groups<-"All ages"
+censusu_asu<-rbind(censusu_asu,censusu_asuall)
+#write_csv(censusu_asu,"census_allprov1+.csv")
 
 censusu_asualb<-censusualb %>% #to calculate rep ratio for APL (use census counts only from AB)
   mutate(age_groups = ifelse(age_groups == "< 18 years",
@@ -219,6 +253,21 @@ censusu_asualb<-censusualb %>% #to calculate rep ratio for APL (use census count
   aggregate(count_census ~ age_groups + sex + urban,
             FUN = sum,
             drop = F)
+
+censusu_asualball<-censusualb %>% #to calculate rep ratio for APL (use census counts only from AB)
+  mutate(age_groups = ifelse(age_groups == "< 18 years",
+                             "0-17 years",
+                             age_groups),
+         sex = case_when(sex == "0" ~ "Female",
+                         sex == "1" ~ "Male"),
+         urban = case_when(urban == "0" ~ "Rural",
+                           urban == "1" ~ "Urban")) %>% 
+  aggregate(count_census ~ sex + urban,
+            FUN = sum,
+            drop = F)
+censusu_asualball$age_groups<-"All ages"
+censusu_asualb<-rbind(censusu_asualb,censusu_asualball)
+#write_csv(censusu_asualb,"census_alb1+.csv")
 
 #---CBS representation ratio---
 cbspop_count<-merge(cbs_asu,censusu_asu18,by = c("age_groups","sex","urban"))
@@ -311,11 +360,11 @@ canpop_count$rr_binned<-case_when(
 )
 
 #-- All datasets in 1 plot --
-cbspop_count$cohort<-"Blood Donor"
-aplpop_count$cohort<-"Outpatient Laboratory"
-abcpop_count$cohort<-"Ab-c probabilistic survey"
-clsapop_count$cohort<-"CLSA probabilistic survey"
-canpop_count$cohort<-"Canpath probabilistic survey"
+cbspop_count$cohort<-"CBS blood donor"
+aplpop_count$cohort<-"APL outpatient laboratory"
+abcpop_count$cohort<-"Ab-c open cohort"
+clsapop_count$cohort<-"CLSA closed cohort"
+canpop_count$cohort<-"Canpath closed cohort"
 allpop_countasu<-do.call("rbind",list(cbspop_count[,-c(6:7)],
                                       aplpop_count[,-c(6:7)],
                                       abcpop_count[,-c(6:7)],
@@ -327,18 +376,32 @@ allpop_countasu$rr_binned<-factor(allpop_countasu$rr_binned,
                                               "Adequately represented (3/4 ≤ RR ≤ 4/3)",
                                               "Moderately overrepresented (4/3 < RR ≤ 2)",
                                               "Strongly overrepresented (RR > 2)"))
+# Join in results of bootstrap analysis
+cbsu<-read.csv("boot_cbs_asu_5000.csv")
+abcu<-read.csv("boot_abc_asu_5000.csv")
+aplu<-read.csv("boot_apl_asu_5000.csv")
+clsau<-read.csv("boot_clsa_asu_5000.csv")
+canu<-read.csv("boot_can_asu_5000.csv")
 
+boot_urban<-do.call("rbind",list(cbsu,abcu,
+                                 aplu,clsau,
+                                 canu)) #add all above into one dataframe
+allpop_countasu<-merge(allpop_countasu,boot_urban,by = c("age_groups","sex","urban","cohort"),
+      all.x = T)
 
 cols<-c("#E16A86","#FFC5D0","#009ADE","#A8E1BF","#50A315")
 ggplot(allpop_countasu,aes(x = sex,y = factor(age_groups,
-                                              levels = c("0-17 years",
+                                              levels = c("All ages",
+                                                         "0-17 years",
                                                          "18-39 years",
                                                          "40-54 years",
                                                          "55+ years")),
                            fill = rr_binned))+
   geom_tile(color = "black",show.legend = T,linewidth = 0.1)+
   scale_fill_discrete(type = cols)+
-  geom_text(aes(label = rep_ratio),color = "black",size = 3.0)+
+  geom_text(aes(label = rep_ratio,
+                fontface = ifelse(rr_prob > 0.95,2,1)),
+            color = "black",size = 3.0)+
   facet_grid(rows = vars(urban),cols = vars(cohort))+
   labs(fill = "Representativeness ratio (RR)",
        x = "Sex",
@@ -359,10 +422,10 @@ clsa_dtasr$pct<-round(clsa_dtasr$count / sum(clsa_dtasr$count),3)
 can_dtasr$pct<-round(can_dtasr$count / sum(can_dtasr$count),3)
 
 #Plot all datasets in single plot
-cbs_dtasr$cohort<-"Blood Donor"
-abc_dtasr$cohort<-"Ab-c probabilistic survey"
-clsa_dtasr$cohort<-"CLSA probabilistic survey"
-can_dtasr$cohort<-"Canpath probabilistic survey"
+cbs_dtasr$cohort<-"CBS Blood Donor"
+abc_dtasr$cohort<-"Ab-c open cohort"
+clsa_dtasr$cohort<-"CLSA closed cohort"
+can_dtasr$cohort<-"Canpath closed cohort"
 all_dtasr<-do.call("rbind",list(cbs_dtasr,abc_dtasr,clsa_dtasr,can_dtasr))
 all_dtasr$c_binned<-factor(case_when(
   all_dtasr$count <= 1000 ~ "Count \u2264 1000",
@@ -381,7 +444,8 @@ all_dtasr$c_binned<-factor(case_when(
              "Count > 100000"))
 
 ggplot(all_dtasr,aes(x = sex, y = factor(age_groups,
-                                         levels = c("0-17 years",
+                                         levels = c("All ages",
+                                                    "0-17 years",
                                                     "18-39 years",
                                                     "40-54 years",
                                                     "55+ years")),
@@ -415,7 +479,8 @@ all_dtasr$pct_bin<-factor(case_when(
              "Proportion > 15%"))
 
 ggplot(all_dtasr,aes(x = sex, y = factor(age_groups,
-                                         levels = c("0-17 years",
+                                         levels = c("All ages",
+                                                    "0-17 years",
                                                     "18-39 years",
                                                     "40-54 years",
                                                     "55+ years")), 
@@ -438,6 +503,45 @@ censusr_asr18<-censusr18 %>% #to calculate rep ratio for cohorts with 18+
   aggregate(count_census ~ age_groups + sex + race,
             FUN = sum,
             drop = F)
+
+censusr_asr18all<-censusr18 %>% 
+  mutate(sex = case_when(sex == "0" ~ "Female",
+                         sex == "1" ~ "Male"),
+         race = case_when(race == "0" ~ "Visible minority",
+                          race == "1" ~ "White")) %>% 
+  aggregate(count_census ~ sex + race,
+            FUN = sum,
+            drop = F)
+censusr_asr18all$age_groups<-"All ages"
+censusr_asr18<-rbind(censusr_asr18,censusr_asr18all)
+#write_csv(censusr_asr18,"censusr_allprov18+.csv")
+
+censusr_asr<-censusr %>% #to calculate rep ratio for national cohorts with all ages (CCAHS)
+  mutate(age_groups = ifelse(age_groups == "< 18 years",
+                             "0-17 years",
+                             age_groups),
+         sex = case_when(sex == "0" ~ "Female",
+                         sex == "1" ~ "Male"),
+         race = case_when(race == "0" ~ "Visible minority",
+                          race == "1" ~ "White")) %>% 
+  aggregate(count_census ~ age_groups + sex + race,
+            FUN = sum,
+            drop = F)
+
+censusr_asrall<-censusr %>%
+  mutate(age_groups = ifelse(age_groups == "< 18 years",
+                             "0-17 years",
+                             age_groups),
+         sex = case_when(sex == "0" ~ "Female",
+                         sex == "1" ~ "Male"),
+         race = case_when(race == "0" ~ "Visible minority",
+                          race == "1" ~ "White")) %>% 
+  aggregate(count_census ~ sex + race,
+            FUN = sum,
+            drop = F)
+censusr_asrall$age_groups<-"All ages"
+censusr_asr<-rbind(censusr_asr,censusr_asrall)
+#write_csv(censusr_asr,"censusr_allprov_1+.csv")
 
 # --- CBS representation ratio ---
 cbspopr_count<-merge(cbs_asr,censusr_asr18,by = c("age_groups","sex","race"))
@@ -512,10 +616,10 @@ canpopr_count$rr_binned<-case_when(
 )
 
 #Plot datasets in a single plot
-cbspopr_count$cohort<-"Blood Donor"
-abcpopr_count$cohort<-"Ab-c probabilistic survey"
-clsapopr_count$cohort<-"CLSA probabilistic survey"
-canpopr_count$cohort<-"Canpath probabilistic survey"
+cbspopr_count$cohort<-"CBS Blood Donor"
+abcpopr_count$cohort<-"Ab-c open cohort"
+clsapopr_count$cohort<-"CLSA closed cohort"
+canpopr_count$cohort<-"Canpath closed cohort"
 allpopr_count<-do.call("rbind",list(cbspopr_count[,-c(6,7)],
                                     abcpopr_count[,-c(6,7)],
                                     clsapopr_count[,-c(6,7)],
@@ -528,17 +632,32 @@ allpopr_count$rr_binned<-factor(allpopr_count$rr_binned,
                                               "Moderately overrepresented (4/3 < RR ≤ 2)",
                                               "Strongly overrepresented (RR > 2)"))
 
+# Join in results of bootstrap analysis
+cbsr<-read.csv("boot_cbs_asr_5000.csv")
+abcr<-read.csv("boot_abc_asr_5000.csv")
+clsar<-read.csv("boot_clsa_asr_5000.csv")
+canr<-read.csv("boot_can_asr_5000.csv")
+
+boot_race<-do.call("rbind",list(cbsr,abcr,
+                                 clsar,canr)) #add all above into one dataframe
+allpopr_count<-merge(allpopr_count,boot_race,by = c("age_groups","sex","race","cohort"),
+                       all.x = T)
+
+
 cols<-c("#E16A86","#FFC5D0","#009ADE","#A8E1BF","#50A315")
 
 ggplot(allpopr_count,aes(x = sex,y = factor(age_groups,
-                                            levels = c("0-17 years",
+                                            levels = c("All ages",
+                                                       "0-17 years",
                                                        "18-39 years",
                                                        "40-54 years",
                                                        "55+ years")),
                          fill = rr_binned))+
   geom_tile(color = "black",show.legend = T,linewidth = 0.1)+
   scale_fill_discrete(type = cols)+
-  geom_text(aes(label = rep_ratio),color = "black",size = 3.0)+
+  geom_text(aes(label = rep_ratio,
+                fontface = ifelse(rr_prob > 0.95,2,1)),
+            color = "black",size = 3.0)+
   facet_grid(rows = vars(race),cols = vars(cohort))+
   labs(fill = "Representativeness",
        x = "Sex",
@@ -550,7 +669,7 @@ ggplot(allpopr_count,aes(x = sex,y = factor(age_groups,
 cbs_dtasq$pct<-round(cbs_dtasq$count / sum(cbs_dtasq$count),3)
 
 #Plot all datasets in a single plot
-cbs_dtasq$cohort<-"Blood donor"
+cbs_dtasq$cohort<-"CBS blood donor"
 all_dtasq<-do.call("rbind",list(cbs_dtasq))
 
 #Create count binned for visualization
@@ -609,15 +728,24 @@ ggplot(all_dtasq,aes(x = sex, y = factor(quintmat,
 
 # -- Heatmap with representation ratio --
 #Calculate age-sex-quintmat census counts
-censusr_asq18<-censusu18 %>% #to calculate rep ratio for cohorts with 18+
+censusr_sq18<-censusu18 %>% #to calculate rep ratio for cohorts with 18+
   mutate(sex = case_when(sex == "0" ~ "Female",
                          sex == "1" ~ "Male")) %>% 
   aggregate(count_census ~ sex + quintmat,
             FUN = sum,
             drop = F)
+#write_csv(censusr_sq18,"censusqm_allprov18+.csv")
 
+censusr_sq<-censusu %>% #calculate rep ratio for CCAHS
+  mutate(sex = case_when(sex == "0" ~ "Female",
+                                          sex == "1" ~ "Male")) %>% 
+  aggregate(count_census ~ sex + quintmat,
+            FUN = sum,
+            drop = F)
+
+#write_csv(censusr_sq,"censusqm_allages.csv")
 # --- CBS representation ratio ---
-cbspopq_count<-merge(cbs_asq,censusr_asq18,by = c("sex","quintmat"))
+cbspopq_count<-merge(cbs_asq,censusr_sq18,by = c("sex","quintmat"))
 cbspopq_count$pct_cbs<-cbspopq_count$count/sum(cbspopq_count$count) #percentage of total CBS samples in each subgroup
 cbspopq_count$pct_pop<-cbspopq_count$count_census/sum(cbspopq_count$count_census) #percentage of total population in each subgroup
 
@@ -635,7 +763,7 @@ cbspopq_count$rr_binned<-case_when(
 )
 
 #Plot datasets in a single plot
-cbspopq_count$cohort<-"Blood Donor"
+cbspopq_count$cohort<-"CBS blood Donor"
 allpopq_count<-do.call("rbind",list(cbspopq_count[,-c(6)]
                                     ))
 
@@ -646,13 +774,23 @@ allpopq_count$rr_binned<-factor(allpopq_count$rr_binned,
                                               "Moderately overrepresented (4/3 < RR ≤ 2)",
                                               "Strongly overrepresented (RR > 2)"))
 
+# Join in results of bootstrap analysis
+cbsq<-read.csv("boot_cbs_sq_5000.csv")
+
+boot_qm<-do.call("rbind",list(cbsq)) #add all above into one dataframe
+allpopq_count<-merge(allpopq_count,boot_qm,by = c("sex","quintmat","cohort"),
+                       all.x = T)
+
+
 cols<-c("#E16A86","#FFC5D0","#009ADE","#A8E1BF","#50A315")
 
-ggplot(allpopq_count,aes(x = sex,y = factor(quintmat),
+p2<-ggplot(allpopq_count,aes(x = sex,y = factor(quintmat),
                          fill = rr_binned))+
-  geom_tile(color = "black",show.legend = T,linewidth = 0.1)+
+  geom_tile(color = "black",show.legend = F,linewidth = 0.1)+
   scale_fill_discrete(type = cols)+
-  geom_text(aes(label = rep_ratio),color = "black",size = 3.0)+
+  geom_text(aes(label = rep_ratio,
+                fontface = ifelse(rr_prob > 0.95,2,1)),
+            color = "black",size = 3.0)+
   facet_grid(cols = vars(cohort))+
   labs(fill = "Representativeness Ratio",
        x = "Sex",
@@ -662,14 +800,13 @@ ggplot(allpopq_count,aes(x = sex,y = factor(quintmat),
 colnames(allpopr_count)[3]<-"strata"
 colnames(allpop_countasu)[3]<-"strata"
 colnames(allpopq_count)[3]<-"strata"
-f1<-do.call("rbind",list(allpopr_count,allpop_countasu,allpopq_count
-                         ))
+f1<-do.call("rbind",list(allpopr_count,allpop_countasu))
 f1$cohort<-factor(f1$cohort,
-                  levels = c("Blood Donor",
-                             "Ab-c probabilistic survey",
-                             "CLSA probabilistic survey",
-                             "Canpath probabilistic survey",
-                             "Outpatient Laboratory"))
+                  levels = c("CBS blood donor",
+                             "Ab-c open cohort",
+                             "CLSA closed cohort",
+                             "Canpath closed cohort",
+                             "APL outpatient laboratory"))
 f1$strata<-factor(f1$strata,
                   levels = c("Rural","Urban","Visible minority",
                              "White","1","2","3","4","5"))
@@ -682,23 +819,39 @@ f1$rr_binned<-factor(f1$rr_binned,
 
 cols<-c("#E16A86","#FFC5D0","#009ADE","#A8E1BF","#50A315")
 
-ggplot(f1,aes(x = sex,y = factor(age_groups,
-                                 levels = c("0-17 years",
+p1<-ggplot(f1,aes(x = sex,y = factor(age_groups,
+                                 levels = c("All ages",
+                                            "0-17 years",
                                             "18-39 years",
                                             "40-54 years",
                                             "55+ years")),
               fill = rr_binned))+
-  geom_tile(color = "black",show.legend = T,linewidth = 0.1)+
+  geom_tile(color = "black",show.legend = F,linewidth = 0.1)+
   scale_fill_discrete(type = cols,breaks = c("Strongly underrepresented (RR < 1/2)",
                                              "Moderately underrepresented (1/2 \u2264 RR < 3/4)",
                                              "Adequately represented (3/4 \u2264 RR \u2264 4/3)",
                                              "Moderately overrepresented (4/3 < RR \u2264 2)",
                                              "Strongly overrepresented (RR > 2)"))+
-  geom_text(aes(label = rep_ratio),color = "black",size = 3.0)+
+  geom_text(aes(label = rep_ratio,
+                fontface = ifelse(rr_prob > 0.95,2,1)),
+            color = "black",size = 3.0)+
   facet_grid(rows = vars(strata),cols = vars(cohort))+
   labs(fill = "Representativeness\n Ratio (RR)",
        x = "Sex",
        y = "Age group")
+p1
+#extract p1 legend (ggpubr package)
+#leg<-get_legend(p1)
+#as_ggplot(a) #plot
 
+#Final plot
+#Convert plots to Grobs
+gp1<-ggplotGrob(p1)
+gp2<-ggplotGrob(p2)
+gtable::gtable_show_layout(gp2)
 
-
+#This produces an almost perfect size of quintmat plot
+grid.arrange(grobs = list(gp1,gp2),
+             widths = c(5,1),
+             nrow = 2
+             )

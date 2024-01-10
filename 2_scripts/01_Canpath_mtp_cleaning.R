@@ -43,7 +43,51 @@ age_groups_fun <- function(variable){ #age buckets corresponding with census
   return(age_group)
 }
 
+age_groups_fun2 <- function(variable){
+  age_group = cut(variable,
+                  breaks = c(0,18,27,37,47,56,
+                             Inf),
+                  labels = c("0-17 years","18-26 years","27-36 years",
+                             "37-46 years","47-56 years","56+ years"),
+                  right = FALSE)
+  return(age_group)
+}
 
+
+province_fun2 <- function(var) {
+  p1 = as.integer(var)
+  prov =  case_when(p1 == 1~ "AB",
+                    p1 == 10~ "PE",
+                    p1 == 7~ "NS",
+                    p1 == 4~ "NB",
+                    p1 == 11~ "QC",
+                    p1 == 9 ~"ON",
+                    p1 == 3~ "MB",
+                    p1 == 12~ "SK",
+                    p1 == 5~ "NL",
+                    p1 == 2~ "BC",
+                    p1 == 6~ "NT",
+                    p1 == 8~ "NU",
+                    p1 == 13~ "YT", 
+                    TRUE~NA)
+  return(prov)}
+
+province_fun3 <- function(var) {
+  fsa_f = as.character(substr(var,1,1))
+  prov =  case_when(fsa_f == "A"~ "NL",
+                    fsa_f == "B"~ "NS",
+                    fsa_f == "C"~ "PE",
+                    fsa_f == "E"~ "NB",
+                    fsa_f %in% c("G","H","J")~ "QC",
+                    fsa_f %in% c("K","L","M","N","P")~"ON",
+                    fsa_f == "R"~ "MB",
+                    fsa_f == "S"~ "SK",
+                    fsa_f == "T"~ "AB",
+                    fsa_f == "V"~ "BC",
+                    fsa_f == "X"~ "NU/NT",
+                    fsa_f == "Y"~ "YT", 
+                    TRUE~NA)
+  return(prov)}
 #Identify MTP participants not in primary dataset and rbind to can_df
 canpath_mtp <- merge(canpath_mtp, canpath_seradmin, by='ResearcherID', all.x = TRUE)
 canpath_mtp <- merge(canpath_serres,canpath_mtp, by='ResearcherID', all.x = TRUE)
@@ -70,6 +114,7 @@ canpath_mtp<-canpath_mtp[!(canpath_mtp$province == "ON" | canpath_mtp$province =
 
 #Create age group variable
 canpath_mtp$age_groups<-age_groups_fun(canpath_mtp$C1_SDC_AGE)
+canpath_mtp$age_groups1<-age_groups_fun2(canpath_mtp$C1_SDC_AGE)
 
 #Classify residence as urban or rural
 canpath_mtp$urban<-with(canpath_mtp,
@@ -141,10 +186,12 @@ canpath_mtp[canpath_mtp$C1_SDC_EB_OTHER_OTSP %in%
 colnames(canpath_mtp)[3]<-"sex"
 canpath_mtp<-canpath_mtp[canpath_mtp$race != "pnts",] #remove race who prefer not to say
 
-#categorize sampledate into two months bins
-canpath_mtp$month<-floor_date(as.Date(canpath_mtp$C1_ADM_COLLECT_DATE),
+#remove participants with missing sampledate and categorize sampledate into two months bins
+canpath_mtp<-canpath_mtp[!is.na(canpath_mtp$C1_ADM_COLLECT_DATE),]
+canpath_mtp$sampledate<-as.Date(canpath_mtp$C1_ADM_COLLECT_DATE)
+canpath_mtp$month<-floor_date(canpath_mtp$sampledate,
                                unit = "2 months")
 can_dfm<-canpath_mtp %>% 
-  select(ResearcherID,age_groups,sex,urban,race,province,month) #no NAs
+  select(ResearcherID,age_groups,age_groups1,sex,urban,race,province,month,sampledate) #no NAs
 
 #write_csv(can_dfm,"can_dfmtp.csv")

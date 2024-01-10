@@ -41,9 +41,14 @@ df_clsa_anti<-read.csv("./CLSA/2209005_McGill_ARussell_Covid_Antibody_Combined_N
 
 #Canpath dataset import
 canpath_data<-read.csv("./CANPATH/DAO-543759_ResearcherDataset_Qx_96014par_1125var.csv")
-canpath_mtp<-read.csv("./CANPATH/DAO-543759_ResearcherDataset_Qx_1114par_1127varMTP.csv")#manitoba cohort
+#canpath_mtp<-read.csv("./CANPATH/DAO-543759_ResearcherDataset_Qx_1114par_1127varMTP.csv")#manitoba cohort
 canpath_seradmin<-read.csv("./CANPATH/DAO-543759_ResearcherDataset_Serology_Admin_25727par.csv")
 canpath_serres<-read.csv("./CANPATH/DAO-543759_ResearcherDataset_Serology_Results_74503par.csv")
+
+#Read in census data
+census<-read.csv("2021 Canadian Census/census_w_counts_race_urban.csv")
+colnames(census)<-c("province","quintmat","age_groups1","sex","race",
+                    "urban","count_census")
 
 #Functions
 province_fun <- function(var) {
@@ -78,8 +83,8 @@ age_groups_fun2 <- function(variable){
  age_group = cut(variable,
                 breaks = c(0,18,27,37,47,56,
                           Inf),
-             labels = c("< 0-18 years","18-26 years","27-36 years",
-                        "37-46 years","47-55 years","56+ years"),
+             labels = c("0-17 years","18-26 years","27-36 years",
+                        "37-46 years","47-56 years","56+ years"),
            right = FALSE)
 return(age_group)
 }
@@ -144,6 +149,7 @@ cbs_data$donation_age[cbs_data$donation_age < 16]
 cbs_data$donation_age <- ifelse(cbs_data$donation_age > 120, cbs_data$donation_age - 100, cbs_data$donation_age)
 
 cbs_data$age_groups <- age_groups_fun(cbs_data$donation_age)
+cbs_data$age_groups1<-age_groups_fun2(cbs_data$donation_age)
 
 #Convert date of sample collection to month of collection
 cbs_data$month <- floor_date(cbs_data$sampledate, unit = "2 months")
@@ -166,9 +172,10 @@ cbs_data$sex<-case_when(
   cbs_data$sex == "F" ~ "Female",
   cbs_data$sex == "M" ~ "Male"
 )
+
 #Generate final df
 cbs_df<-cbs_data %>% 
-  select(age_groups,sex,race,urban,quintmat,quintsoc,province,month) %>% 
+  select(pid,age_groups,sampledate,sex,race,urban,quintmat,quintsoc,province,month,age_groups1) %>% 
   mutate(quintmat = ifelse(is.na(quintmat),999,quintmat),
          quintsoc = ifelse(is.na(quintsoc),999,quintsoc)) %>%  #code missing as 999 for sensitivity analyses
   filter(province != ("YT") & province !=("NU/NT") & province != ("QC") &
@@ -180,6 +187,20 @@ cbs_asu<-cbs_df %>%
   group_by(age_groups,sex,urban) %>% 
   summarize(count = n()) %>% 
   ungroup()
+
+cbs_asu1<-cbs_df %>% 
+  group_by(age_groups1,sex,urban) %>% 
+  summarize(count = n()) %>% 
+  ungroup #alternative age buckets
+
+#Counts across all age categories
+cbs_allu<-aggregate(cbs_asu,count ~ sex + urban, FUN = sum,drop = F)
+cbs_allu<-cbs_allu %>% 
+  mutate(age_groups = "All ages",
+         age_groups1 = "All ages")
+
+cbs_asu<-rbind(cbs_asu,cbs_allu[,c(1:4)]) #final df
+cbs_asu1<-rbind(cbs_asu1,cbs_allu[,c(1:3,5)]) #final df
   
 #Counts by age-sex-race
 cbs_asr<-cbs_df %>%
@@ -187,7 +208,21 @@ cbs_asr<-cbs_df %>%
   summarize(count = n()) %>% 
   ungroup()
 
-#Counts by age-sex-quintmat
+cbs_asr1<-cbs_df %>% 
+  group_by(age_groups1,sex,race) %>% 
+  summarize(count = n()) %>% 
+  ungroup() #alternative age buckets
+
+#Counts across all age categories
+cbs_allr<-aggregate(cbs_asr,count ~ sex + race, FUN = sum,drop = F)
+cbs_allr<-cbs_allr %>% 
+  mutate(age_groups = "All ages",
+         age_groups1 = "All ages")
+
+cbs_asr<-rbind(cbs_asr,cbs_allr[,c(1:4)]) #final df
+cbs_asr1<-rbind(cbs_asr1,cbs_allr[,c(1:3,5)]) #final df
+
+#Counts by sex-quintmat
 cbs_asq<-cbs_df %>% 
   group_by(sex,quintmat) %>% 
   summarize(count = n()) %>% 
@@ -196,14 +231,19 @@ cbs_asq<-cbs_df %>%
 #Save grouped dfs to csv
 #write_csv(cbs_asr,"./cbs_asr_nov62023_count.csv")
 #write_csv(cbs_asu,"./cbs_asu_nov62023_count.csv")
-write_csv(cbs_asq,"./cbs_asq_dec62023_count.csv")
+#write_csv(cbs_asq,"./cbs_asq_dec62023_count.csv")
 #write_csv(cbs_df,"./cbs_df.csv")
+#write_csv(cbs_asu1,"./cbs_asu1_dec172023_count.csv")
+#write_csv(cbs_asr1,"./cbs_asr1_dec172023.csv")
 
 # Outpatient Laboratory (APL) ---------------------------------------------
 #Manually remove duplicate entries and regenerate order ID
 apl_data<-apl_data %>% 
   filter(order_ID != 1253 & order_ID != 1521 & order_ID != 2728 & order_ID != 3247) %>% 
   mutate(order_ID = 1:214776)
+
+#Remove individuals with no unique ID
+apl_data<-apl_data[!is.na(apl_data$clean_IDe),]
 
 #Generate urban variable
 apl_data<-apl_data %>% 
@@ -226,12 +266,13 @@ apl_data$month<-floor_date(apl_data$COLLECTION_DATE,unit = "2 months")
 #Generate age group and province variables
 apl_data<-apl_data %>%
  mutate(age_groups = age_groups_fun(apl_data$AGE_AT_COLLECTION),
+        age_groups1 = age_groups_fun2(apl_data$AGE_AT_COLLECTION),
         province = province_fun(apl_data$PAT_FSA))
 
 #Generate final df
 apl_df<-apl_data %>% 
-  select(age_groups,GENDER,urban,province,month)
-colnames(apl_df)<-c("age_groups","sex","urban","province","month")
+  select(clean_IDe,age_groups,GENDER,urban,province,month,COLLECTION_DATE,age_groups1)
+colnames(apl_df)<-c("pid","age_groups","sex","urban","province","month","sampledate","age_groups1")
 
 #Counts by age-sex-urban
 apl_asu<-apl_df %>% 
@@ -239,8 +280,23 @@ apl_asu<-apl_df %>%
   summarize(count = n()) %>% 
   ungroup()
 
+apl_asu1<-apl_df %>% 
+  group_by(age_groups1,sex,urban) %>% 
+  summarize(count = n()) %>% 
+  ungroup() #alternative age buckets
+
+#Counts across all age categories
+apl_allu<-aggregate(apl_asu,count ~ sex + urban, FUN = sum,drop = F)
+apl_allu<-apl_allu %>% 
+  mutate(age_groups = "All ages",
+         age_groups1 = "All ages")
+
+apl_asu<-rbind(apl_asu,apl_allu[,c(1:4)]) #final df
+apl_asu1<-rbind(apl_asu1,apl_allu[,c(1:3,5)]) #final df
+
 #save grouped dfs to csv
 #write_csv(apl_asu,"./apl_asu_nov72023_count.csv")
+#write_csv(apl_asu1,"./apl_asu1_dec172023.csv")
 #write_csv(apl_df,"./apl_df.csv")
 
 # Probabilistic Survey 1 (Ab-c) ---------------------------------------
@@ -258,6 +314,7 @@ abc_data1<-abc_data1 %>%
            substr(p1_fsa,start = 2,stop = 2) == 0 ~ "Rural",
            substr(p1_fsa,start = 2,stop = 2) != 0 ~ "Urban"),
          age_groups = age_groups_fun(as.numeric(abc_data1$p1_age)),
+         age_groups1 = age_groups_fun2(as.numeric(abc_data1$p1_age)),
          sex = case_when(p1_qe2 == 1 ~ "Male",
                          p1_qe2 == 2 ~ "Female",
                          p1_qe2 == 3 ~ "Self described"),
@@ -265,7 +322,7 @@ abc_data1<-abc_data1 %>%
                        "White","Visible minority"))
 
 #categorize month sample received into two month buckets
-abc_data1$month<-case_when(
+abc_data1$sampledate<-case_when(
   abc_data1$month == 5 ~ "2020-05-01",
   abc_data1$month == 6 ~ "2020-06-01",
   abc_data1$month == 7 ~ "2020-07-01",
@@ -274,11 +331,11 @@ abc_data1$month<-case_when(
   TRUE ~ NA)
 
 #Place date sample received into 2 month time buckets
-abc_data1$month<-floor_date(as.Date(abc_data1$month),unit = "2 months")
+abc_data1$month<-floor_date(as.Date(abc_data1$sampledate),unit = "2 months")
 
 #Generate final df for p1
 abc_df1<-abc_data1 %>% 
-  select(age_groups,sex,urban,race,province,month)
+  select(rseed,age_groups,sex,urban,race,province,month,age_groups1)
 
 #Period 2
 abc_data2<-abc_data %>% 
@@ -295,6 +352,7 @@ abc_data2<-abc_data2 %>%
            substr(p2_fsa,start = 2,stop = 2) == 0 ~ "Rural",
            substr(p2_fsa,start = 2,stop = 2) != 0 ~ "Urban"),
          age_groups = age_groups_fun(as.numeric(abc_data2$p2_age)),
+         age_groups1 = age_groups_fun2(as.numeric(abc_data2$p2_age)),
          sex = case_when(p2_qe2 == 1 ~ "Male",
                          p2_qe2 == 2 ~ "Female",
                          p2_qe2 == 3 ~ "Self described"),
@@ -302,12 +360,12 @@ abc_data2<-abc_data2 %>%
                        "White","Visible minority"))
 
 #Place date sample received into 2 month time buckets
-abc_data2$month<-as.Date(abc_data2$p2_received_date)
-abc_data2$month<-floor_date(abc_data2$month,unit = "2 months")
+abc_data2$sampledate<-as.Date(abc_data2$p2_received_date)
+abc_data2$month<-floor_date(abc_data2$sampledate,unit = "2 months")
 
 #Generate final df for p2
 abc_df2<-abc_data2 %>% 
-  select(age_groups,sex,urban,race,province,month)
+  select(rseed,age_groups,sex,urban,race,province,month,age_groups1)
 
 #Period 3
 abc_data3<-abc_data %>% 
@@ -324,6 +382,7 @@ abc_data3<-abc_data3 %>%
            substr(p3_fsa,start = 2,stop = 2) == 0 ~ "Rural",
            substr(p3_fsa,start = 2,stop = 2) != 0 ~ "Urban"),
          age_groups = age_groups_fun(as.numeric(abc_data3$p3_age)),
+         age_groups1 = age_groups_fun2(as.numeric(abc_data3$p3_age)),
          sex = case_when(p3_qe2 == 1 ~ "Male",
                          p3_qe2 == 2 ~ "Female",
                          p3_qe2 == 3 ~ "Self described"),
@@ -331,12 +390,13 @@ abc_data3<-abc_data3 %>%
                        "White","Visible minority"))
 
 #Place date sample received into 2 month time buckets
-abc_data3$month<-as.Date(abc_data3$p3_dbs_received_date)
-abc_data3$month<-floor_date(abc_data3$month,unit = "2 months")
+abc_data3$sampledate<-as.Date(abc_data3$p3_dbs_received_date)
+abc_data3<-abc_data3[!is.na(abc_data3$sampledate),] #remove 1 individual with missing sample month
+abc_data3$month<-floor_date(abc_data3$sampledate,unit = "2 months")
 
 #Generate final p3 df
 abc_df3<-abc_data3 %>% 
-  select(age_groups,sex,urban,race,province,month)
+  select(rseed,age_groups,sex,urban,race,province,month,age_groups1)
 
 #Period 4
 abc_data4<-abc_data %>% 
@@ -349,8 +409,8 @@ abc_data4<-abc_data4[which(abc_data4$p4_np_igg_pred != ""
                            & abc_data4$p4_smt1_igg_pred != ""),] #remove individuals with no serology available
 
 #Place date sample received into 2 month time buckets
-abc_data4$month<-as.Date(abc_data4$p4_dbs_received_date)
-abc_data4$month<-floor_date(abc_data4$month,unit = "2 months")
+abc_data4$sampledate<-as.Date(abc_data4$p4_dbs_received_date)
+abc_data4$month<-floor_date(abc_data4$sampledate,unit = "2 months")
 
 abc_data4<-abc_data4 %>% 
   mutate(province = p4a_province,
@@ -358,6 +418,7 @@ abc_data4<-abc_data4 %>%
            substr(p4a_fsa,start = 2,stop = 2) == 0 ~ "Rural",
            substr(p4a_fsa,start = 2,stop = 2) != 0 ~ "Urban"),
          age_groups = age_groups_fun(as.numeric(abc_data4$p4a_age)),
+         age_groups1 = age_groups_fun2(as.numeric(abc_data4$p4a_age)),
          sex = case_when(p4a_qe2 == 1 ~ "Male",
                          p4a_qe2 == 2 ~ "Female",
                          p4a_qe2 == 3 ~ "Self described"),
@@ -366,7 +427,7 @@ abc_data4<-abc_data4 %>%
         
 #Generate final p4 df
 abc_df4<-abc_data4 %>% 
-  select(age_groups,sex,urban,race,province,month)
+  select(rseed,age_groups,sex,urban,race,province,month,age_groups1)
 
 #Generate final working df
 abc_df<-do.call("rbind",list(abc_df1,abc_df2,abc_df3,abc_df4)) #counts match ab-c documentation
@@ -379,16 +440,46 @@ abc_asu<-abc_df %>%
   summarize(count = n()) %>% 
   ungroup()
 
+abc_asu1<-abc_df %>% 
+  group_by(age_groups1,sex,urban) %>% 
+  summarize(count = n()) %>% 
+  ungroup() #alternative age buckets
+
+#Counts across all age categories
+abc_allu<-aggregate(abc_asu,count ~ sex + urban, FUN = sum,drop = F)
+abc_allu<-abc_allu %>% 
+  mutate(age_groups = "All ages",
+         age_groups1 = "All ages")
+
+abc_asu<-rbind(abc_asu,abc_allu[,c(1:4)]) #final df
+abc_asu1<-rbind(abc_asu1,abc_allu[,c(1:3,5)]) #final df
+
 #Group by age-sex-race
 abc_asr<-abc_df %>% 
   group_by(age_groups,sex,race) %>% 
   summarize(count = n()) %>% 
   ungroup()
 
+abc_asr1<-abc_df %>% 
+  group_by(age_groups1,sex,race) %>% 
+  summarize(count = n()) %>% 
+  ungroup() #alternative age buckets
+
+#Counts across all age categories
+abc_allr<-aggregate(abc_asr,count ~ sex + race, FUN = sum,drop = F)
+abc_allr<-abc_allr %>% 
+  mutate(age_groups = "All ages",
+         age_groups1 = "All ages")
+
+abc_asr<-rbind(abc_asr,abc_allr[,c(1:4)]) #final df
+abc_asr1<-rbind(abc_asr1,abc_allr[,c(1:3,5)]) #final df
+
 #Write to csv
 #write_csv(abc_asu,"./abc_asu_nov82023_count.csv")
 #write_csv(abc_asr,"./abc_asr_nov82023_count.csv")
 #write_csv(abc_df,"./abc_df.csv")
+#write_csv(abc_asu1,"./abc_asu1_dec172023.csv")
+#write_csv(abc_asr1,"./abc_asr1_dec172023.csv")
 
 # Probabilistic Survey 2 (CLSA) -----------------------------
 #Colnames for combined dataset
@@ -419,12 +510,13 @@ df_all_clsa$province <- province_fun3(df_all_clsa$FSA_COVID)
 
 #Create age variable
 df_all_clsa$age = df_all_clsa$SER_AGE_COV
-df_all_clsa$age_groups = cut(df_all_clsa$age, 
+df_all_clsa$age_groups <- cut(df_all_clsa$age, 
                             breaks = c(18,40,55,Inf),
                             labels = c('18-39 years',
                                        '40-54 years',
                                        '55+ years'),
                             right = FALSE)
+df_all_clsa$age_groups1 <- age_groups_fun2(df_all_clsa$age)
 
 #Restrict sex to male or female
 df_all_clsa <- df_all_clsa[df_all_clsa$SER_SEX_COV %in% c('M','F'),] #11946
@@ -457,12 +549,14 @@ df_all_clsa <- df_all_clsa[df_all_clsa$SER_NUCLEOCAPSID_COV >= 0 |
                              df_all_clsa$SER_SPIKE_COV >= 0,] # 10417
 
 #classify interview start date (proxy for sampledate)
-df_all_clsa$month<-floor_date(as.Date(df_all_clsa$start_datetime_COV),
+df_all_clsa$sampledate<-as.Date(df_all_clsa$start_datetime_COV)
+df_all_clsa$month<-floor_date(df_all_clsa$sampledate,
                               unit = "2 months")
 
 #generate final df
 clsa_df<-df_all_clsa %>% 
-  select(age_groups,SER_SEX_COV,province,urban,race,month) %>% 
+  select(entity_id,age_groups,SER_SEX_COV,province,urban,race,month,
+         sampledate,age_groups1) %>% 
   mutate(race = case_when(
     race == 1 ~ "White",
     race == 0 ~ "Visible minority",
@@ -476,7 +570,7 @@ clsa_df<-df_all_clsa %>%
          province != is.na(province),
          urban != is.na(urban),
          race != is.na(race))
-colnames(clsa_df)[2]<-"sex"
+colnames(clsa_df)[3]<-"sex"
 
 #Counts by age-sex-urban
 clsa_asu<-clsa_df %>%
@@ -484,18 +578,46 @@ clsa_asu<-clsa_df %>%
   summarize(count = n()) %>% 
   ungroup()
 
+clsa_asu1<-clsa_df %>% 
+  group_by(age_groups1,sex,urban) %>% 
+  summarize(count = n()) %>% 
+  ungroup() #alternative age buckets
+
+#Counts across all age categories
+clsa_allu<-aggregate(clsa_asu,count ~ sex + urban, FUN = sum,drop = F)
+clsa_allu<-clsa_allu %>% 
+  mutate(age_groups = "All ages",
+         age_groups1 = "All ages")
+
+clsa_asu<-rbind(clsa_asu,clsa_allu[,c(1:4)]) #final df
+clsa_asu1<-rbind(clsa_asu1,clsa_allu[,c(1:3,5)]) #final df
+
 #Counts by age-sex-race
 clsa_asr<-clsa_df %>%
   group_by(age_groups,sex,race) %>% 
   summarize(count = n()) %>% 
   ungroup()
 
-#Sensitivity analysis - % of missing observations in each variable
+clsa_asr1<-clsa_df %>% 
+  group_by(age_groups1,sex,race) %>% 
+  summarize(count = n()) %>% 
+  ungroup() #alternative age buckets
+
+#Counts across all age categories
+clsa_allr<-aggregate(clsa_asr,count ~ sex + race, FUN = sum,drop = F)
+clsa_allr<-clsa_allr %>% 
+  mutate(age_groups = "All ages",
+         age_groups1 = "All ages")
+
+clsa_asr<-rbind(clsa_asr,clsa_allr[,c(1:4)]) #final df
+clsa_asr1<-rbind(clsa_asr1,clsa_allr[,c(1:3,5)]) #final df
 
 #write to csv
 #write_csv(clsa_asu,"./clsa_asu_nov202023_count.csv")
 #write_csv(clsa_asr,"./clsa_asr_nov202023_count.csv")
 #write_csv(clsa_df,"./clsa_df.csv")
+#write_csv(clsa_asu1,"./clsa_asu1_dec172023.csv")
+#write_csv(clsa_asr1,"./clsa_asr1_dec172023.csv")
 
 # Probabilistic Survey 3 (CANPATH) ------------------------------------------------
 
@@ -528,6 +650,7 @@ canpath_data<-canpath_data[!(canpath_data$province == "SK" | canpath_data$provin
 
 #Create age group variable
 canpath_data$age_groups<-age_groups_fun(canpath_data$C1_SDC_AGE)
+canpath_data$age_groups1<-age_groups_fun2(canpath_data$C1_SDC_AGE)
 
 #Classify residence as urban or rural
 canpath_data$urban<-with(canpath_data,
@@ -689,11 +812,13 @@ canpath_data[canpath_data$C1_SDC_EB_OTHER_OTSP %in%
 colnames(canpath_data)[3]<-"sex"
 canpath_data<-canpath_data[canpath_data$race != "pnts",] #remove race who prefer not to say
 
-#categorize sampledate into two months bins
-canpath_data$month<-floor_date(as.Date(canpath_data$C1_ADM_COLLECT_DATE),
+#remove participants with missing sampledate and categorize sampledate into two months bins
+canpath_data<-canpath_data[!is.na(canpath_data$C1_ADM_COLLECT_DATE),]
+canpath_data$sampledate<-as.Date(canpath_data$C1_ADM_COLLECT_DATE)
+canpath_data$month<-floor_date(canpath_data$sampledate,
                                unit = "2 months")
 can_df<-canpath_data %>% 
-  select(ResearcherID,age_groups,sex,urban,race,province,month) #no NAs
+  select(ResearcherID,age_groups,sex,urban,race,province,month,sampledate,age_groups1) #no NAs
 
 #Check if any MTP participants from new dataset are not included in can_df
 can_dfmtp<-read.csv("can_dfmtp.csv")
@@ -705,39 +830,282 @@ can_asu<-can_df %>%
   summarize(count = n()) %>% 
   ungroup()
 
+can_asu1<-can_df %>% 
+  group_by(age_groups1,sex,urban) %>% 
+  summarize(count = n()) %>% 
+  ungroup() #alternative age buckets
+
+#Counts across all age categories
+can_allu<-aggregate(can_asu,count ~ sex + urban, FUN = sum,drop = F)
+can_allu<-can_allu %>% 
+  mutate(age_groups = "All ages",
+         age_groups1 = "All ages")
+
+can_asu<-rbind(can_asu,can_allu[,c(1:4)]) #final df
+can_asu1<-rbind(can_asu1,can_allu[,c(1:3,5)]) #final df
+
 #Counts by age-sex-race
 can_asr<-can_df %>%
   group_by(age_groups,sex,race) %>% 
   summarize(count = n()) %>% 
   ungroup()
 
+can_asr1<-can_df %>% 
+  group_by(age_groups1,sex,race) %>% 
+  summarize(count = n()) %>% 
+  ungroup() #alternative age buckets
+
+#Counts across all age categories
+can_allr<-aggregate(can_asr,count ~ sex + race, FUN = sum,drop = F)
+can_allr<-can_allr %>% 
+  mutate(age_groups = "All ages",
+         age_groups1 = "All ages")
+
+can_asr<-rbind(can_asr,can_allr[,c(1:4)]) #final df
+can_asr1<-rbind(can_asr1,can_allr[,c(1:3,5)]) #final df
+
 #Save grouped dfs to csv
 #write_csv(can_asu,"./can_asu_dec72023_count.csv")
 #write_csv(can_asr,"./can_asr_dec72023_count.csv")
 #write_csv(can_df,"./can_df.csv")
+#write_csv(can_asu1,"./can_asu1_dec172023_count.csv")
+#write_csv(can_asr1,"./can_asr1_dec172023.csv")
 
-# Create table 1 ----------------------------------------------------------
-abcreg<-c("AB, BC, MB, NB,\n NL, NT, NS, ON,\n PE, QC, SK, YT")
-cbsreg<-c("AB, BC, MB, NB,\n NL, NS, ON, \n PE, SK")
 
-t1<-data.frame(Cohort = c("Action to Beat Coronavirus (Ab-c)",
-                          "Canadian Blood Services (CBS)"),
-               sf = c("Participant age \u2265 18",
-                      "Participant age \u2265 17"),
-               rg = c(abcreg,cbsreg),
-               sp = c("DBS","Serum"),
-               stas = c("XXX specimens from YYY participants XXXX-XXXX",
-                        "XXX specimens from YYY participants XXXX-XXXX"),
-               nt = c(c("Research cohort \n \n Oversampled participants aged >= 60 "),
-                 c("Convenience sample \n \n Random selection of residual blood donor specimens")))
-                      
-ft1<-flextable(t1) %>% 
-  set_header_labels(sf = "Sampling frame",
-                    rg = "Region",
-                    sp = "Specimen type",
-                    stas = "Study Time and Size",
-                    nt = "Notes") %>% 
-  theme_vanilla()
-ft1
+# 2021 Canadian census ----------------------------------------------------
+#Census counts by age-sex-urban
+#Setting A: 10 provinces, 18+ (Ab-c,CLSA)
+census_a<-census %>% 
+  mutate(sex = case_when(sex == "0" ~ "Female",
+                         sex == "1" ~ "Male"),
+         urban = case_when(urban == "0" ~ "Rural",
+                           urban == "1" ~ "Urban")) %>%
+  filter(age_groups1 != "< 18 years") %>% 
+  aggregate(count_census ~ age_groups1 + sex + urban,
+            FUN = sum,
+            drop = F)
+census_a_all<-census_a %>%  
+  aggregate(count_census ~ sex + urban,
+            FUN = sum,
+            drop = F)
+census_a_all$age_groups1<-"All ages"
+census_a<-rbind(census_a,census_a_all)
+write_csv(census_a,"2021 Canadian Census/censusasu_a_abcclsa.csv")
+
+#Setting B: 10 provinces, all ages (CCAHS)
+'census_b<-census %>% 
+  mutate(sex = case_when(sex == "0" ~ "Female",
+                         sex == "1" ~ "Male"),
+         urban = case_when(urban == "0" ~ "Rural",
+                           urban == "1" ~ "Urban")) %>% 
+  filter(province != "YT" & province != "NU/NT") %>%  #remove territories
+  aggregate(count_census ~ age_groups1 + sex + urban,
+            FUN = sum,
+            drop = F)
+census_b_all<-census_b %>%  
+  aggregate(count_census ~ sex + urban,
+            FUN = sum,
+            drop = F)
+census_b_all$age_groups1<-"All ages"
+census_b<-rbind(census_b,census_b_all)
+write_csv(census_b, "2021 Canadian Census/censusasu_b_ccahs.csv")'
+
+#Setting C: 9 provinces (no Quebec), 18+ (CBS)
+census_c<-census %>% 
+  mutate(sex = case_when(sex == "0" ~ "Female",
+                         sex == "1" ~ "Male"),
+         urban = case_when(urban == "0" ~ "Rural",
+                           urban == "1" ~ "Urban")) %>% 
+  filter(province != "QC" & age_groups1 != "< 18 years") %>% 
+  aggregate(count_census ~ age_groups1 + sex + urban,
+            FUN = sum,
+            drop = F)
+census_c_all<-census_c %>%  
+  aggregate(count_census ~ sex + urban,
+            FUN = sum,
+            drop = F)
+census_c_all$age_groups1<-"All ages"
+census_c<-rbind(census_c,census_c_all)
+write_csv(census_c,"2021 Canadian Census/censusasu_c_cbs.csv")
+
+#Setting D: 9 provinces (no Saskatchewan), 18+ (Canpath)
+census_d<-census %>% 
+  mutate(sex = case_when(sex == "0" ~ "Female",
+                         sex == "1" ~ "Male"),
+         urban = case_when(urban == "0" ~ "Rural",
+                           urban == "1" ~ "Urban")) %>% 
+  filter(province != "SK" & age_groups1 != "< 18 years") %>% 
+  aggregate(count_census ~ age_groups1 + sex + urban,
+            FUN = sum,
+            drop = F)
+census_d_all<-census_d %>%  
+  aggregate(count_census ~ sex + urban,
+            FUN = sum,
+            drop = F)
+census_d_all$age_groups1<-"All ages"
+census_d<-rbind(census_d,census_d_all)
+write_csv(census_d,"2021 Canadian Census/censusasu_d_canpath.csv")
+
+#Setting E: Alberta, all ages (APL)
+census_e<-census %>% 
+  mutate(sex = case_when(sex == "0" ~ "Female",
+                         sex == "1" ~ "Male"),
+         urban = case_when(urban == "0" ~ "Rural",
+                           urban == "1" ~ "Urban")) %>% 
+  filter(province == "AB") %>% 
+  aggregate(count_census ~ age_groups1 + sex + urban,
+            FUN = sum,
+            drop = F)
+census_e_all<-census_e %>%  
+  aggregate(count_census ~ sex + urban,
+            FUN = sum,
+            drop = F)
+census_e_all$age_groups1<-"All ages"
+census_e<-rbind(census_e,census_e_all)
+write_csv(census_e,"2021 Canadian Census/censusasu_e_apl.csv")
+
+#Setting F: Only territories, all ages (CCAHS-1)
+'census_f<-census %>% 
+  mutate(sex = case_when(sex == "0" ~ "Female",
+                         sex == "1" ~ "Male"),
+         urban = case_when(urban == "0" ~ "Rural",
+                           urban == "1" ~ "Urban")) %>% 
+  filter(province == "NU/NT" | province == "YT") %>% 
+  aggregate(count_census ~ age_groups1 + sex + urban,
+            FUN = sum,
+            drop = F)
+census_f_all<-census_f %>%  
+  aggregate(count_census ~ sex + urban,
+            FUN = sum,
+            drop = F)
+census_f_all$age_groups1<-"All ages"
+census_f<-rbind(census_f,census_f_all)
+write_csv(census_f,"2021 Canadian Census/censusasu_f_ccahs.csv")'
+
+#Census counts by age-sex-race
+#Setting A: 10 provinces, 18+ (Ab-c,CLSA)
+census_ar<-census %>% 
+  mutate(sex = case_when(sex == "0" ~ "Female",
+                         sex == "1" ~ "Male"),
+         race = case_when(race == "0" ~ "Visible minority",
+                          race == "1" ~ "White")) %>%
+  filter(age_groups1 != "< 18 years") %>% 
+  aggregate(count_census ~ age_groups1 + sex + race,
+            FUN = sum,
+            drop = F)
+census_ar_all<-census_ar %>%  
+  aggregate(count_census ~ sex + race,
+            FUN = sum,
+            drop = F)
+census_ar_all$age_groups1<-"All ages"
+census_ar<-rbind(census_ar,census_ar_all)
+write_csv(census_ar,"2021 Canadian Census/censusasr_a_abcclsa.csv")
+
+'#Setting B: 10 provinces, all ages (CCAHS)
+census_br<-census %>% 
+  mutate(sex = case_when(sex == "0" ~ "Female",
+                         sex == "1" ~ "Male"),
+         race = case_when(race == "0" ~ "Visible minority",
+                          race == "1" ~ "White")) %>% 
+  filter(province != "YT" & province != "NU/NT") %>%  #remove territories
+  aggregate(count_census ~ age_groups1 + sex + race,
+            FUN = sum,
+            drop = F)
+census_br_all<-census_br %>%  
+  aggregate(count_census ~ sex + race,
+            FUN = sum,
+            drop = F)
+census_br_all$age_groups1<-"All ages"
+census_br<-rbind(census_br,census_br_all)
+write_csv(census_br, "2021 Canadian Census/censusasr_b_ccahs.csv")'
+
+#Setting C: 9 provinces (no Quebec), 18+ (CBS)
+census_cr<-census %>% 
+  mutate(sex = case_when(sex == "0" ~ "Female",
+                         sex == "1" ~ "Male"),
+         race = case_when(race == "0" ~ "Visible minority",
+                          race == "1" ~ "White")) %>% 
+  filter(province != "QC" & age_groups1 != "< 18 years") %>% 
+  aggregate(count_census ~ age_groups1 + sex + race,
+            FUN = sum,
+            drop = F)
+census_cr_all<-census_cr %>%  
+  aggregate(count_census ~ sex + race,
+            FUN = sum,
+            drop = F)
+census_cr_all$age_groups1<-"All ages"
+census_cr<-rbind(census_cr,census_cr_all)
+write_csv(census_cr,"2021 Canadian Census/censusasr_c_cbs.csv")
+
+#Setting D: 9 provinces (no Saskatchewan), 18+ (Canpath)
+census_dr<-census %>% 
+  mutate(sex = case_when(sex == "0" ~ "Female",
+                         sex == "1" ~ "Male"),
+         race = case_when(race == "0" ~ "Visible minority",
+                          race == "1" ~ "White")) %>% 
+  filter(province != "SK" & age_groups1 != "< 18 years") %>% 
+  aggregate(count_census ~ age_groups1 + sex + race,
+            FUN = sum,
+            drop = F)
+census_dr_all<-census_dr %>%  
+  aggregate(count_census ~ sex + race,
+            FUN = sum,
+            drop = F)
+census_dr_all$age_groups1<-"All ages"
+census_dr<-rbind(census_dr,census_dr_all)
+write_csv(census_dr,"2021 Canadian Census/censusasr_d_canpath.csv")
+
+'#Setting F: Only territories, all ages (CCAHS-1)
+census_fr<-census %>% 
+  mutate(sex = case_when(sex == "0" ~ "Female",
+                         sex == "1" ~ "Male"),
+         race = case_when(race == "0" ~ "Visible minority",
+                          race == "1" ~ "White")) %>% 
+  filter(province == "NU/NT" | province == "YT") %>% 
+  aggregate(count_census ~ age_groups1 + sex + race,
+            FUN = sum,
+            drop = F)
+census_fr_all<-census_fr %>%  
+  aggregate(count_census ~ sex + race,
+            FUN = sum,
+            drop = F)
+census_fr_all$age_groups1<-"All ages"
+census_fr<-rbind(census_fr,census_fr_all)
+write_csv(census_fr,"2021 Canadian Census/censusasr_f_ccahs.csv")'
+
+#Census counts by sex-quintmat
+#Setting B: 10 provinces, all ages (CCAHS)
+'census_bq<-census %>% 
+  mutate(sex = case_when(sex == "0" ~ "Female",
+                         sex == "1" ~ "Male")) %>% 
+  filter(province != "YT" & province != "NU/NT") %>%  #remove territories
+  aggregate(count_census ~ sex + quintmat,
+            FUN = sum,
+            drop = F)
+
+write_csv(census_bq, "2021 Canadian Census/censussq_b_ccahs.csv")'
+
+#Setting C: 9 provinces (no Quebec), 18+ (CBS)
+census_cq<-census %>% 
+  mutate(sex = case_when(sex == "0" ~ "Female",
+                         sex == "1" ~ "Male")) %>% 
+  filter(province != "QC" & age_groups1 != "< 18 years") %>% 
+  aggregate(count_census ~ sex + quintmat,
+            FUN = sum,
+            drop = F)
+
+write_csv(census_cq,"2021 Canadian Census/censussq_c_cbs.csv")
+
+'#Setting F: Only territories, all ages (CCAHS-1)
+census_fq<-census %>% 
+  mutate(sex = case_when(sex == "0" ~ "Female",
+                         sex == "1" ~ "Male")) %>% 
+  filter(province == "NU/NT" | province == "YT") %>% 
+  aggregate(count_census ~ sex + quintmat,
+            FUN = sum,
+            drop = F)
+
+write_csv(census_fq,"2021 Canadian Census/censussq_f_ccahs.csv")'
+
 
 
