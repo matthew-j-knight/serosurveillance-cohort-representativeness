@@ -5,13 +5,14 @@ with counts greater than 25."
 # Read in count tables from csv ------------------------------------------
 setwd("~/serosurveillance-cohort-representativeness/1_data/private")
 library(tidyverse)
-library(flextable)
 library(scales)
 cbs_df<-read.csv("cbs_df_jan222024.csv")
 apl_df<-read.csv("apl_df_jan222024.csv")
 abc_df<-read.csv("abc_df_jan222024.csv")
 clsa_df<-read.csv("clsa_df_jan222024.csv")
 can_df<-read.csv("can_df_jan222024.csv")
+can_df1<-read.csv("can_df1_jan222024.csv")
+ccahs1_out<-read_xlsx("2021 Canadian Census/10285/Sortie_CCAHS_Census_ratio/df_emptycell.xlsx")
 
 #Run analysis ------------------------
 #Age-sex-province-month datasets
@@ -20,12 +21,16 @@ cbs_as<-cbs_df %>% group_by(age_groups,sex,province,month) %>%
 apl_as<-apl_df %>% filter(sex != "Unknown") %>% 
   group_by(age_groups,sex,province,month) %>% 
   summarize(count = n()) %>% ungroup()
-abc_as<-abc_df %>% filter(sex != "Self described") %>% 
+abc_as<-abc_df %>% 
+  filter(sex != "Self described" & province != "YT" & !is.na(sampledate)) %>% 
   group_by(age_groups,sex,province,month) %>% 
   summarize(count = n()) %>% ungroup()
-clsa_as<-clsa_df %>% group_by(age_groups,sex,province,month) %>% 
+clsa_as<-clsa_df %>% 
+  filter(!is.na(sampledate)) %>% 
+  group_by(age_groups,sex,province,month) %>% 
   summarize(count = n()) %>% ungroup()
-can_as<-can_df %>% group_by(age_groups,sex,province,month) %>% 
+can_as<-can_df %>% filter(!is.na(sampledate)) %>% 
+  group_by(age_groups,sex,province,month) %>% 
   summarize(count = n()) %>% ungroup()
 
 cbs_countas<-round((nrow(cbs_as %>% filter (count > 25)))/nrow(cbs_as),2) * 100
@@ -41,13 +46,17 @@ cbs_asu<-cbs_df %>%filter(!is.na(urban)) %>%
 apl_asu<-apl_df %>% filter(sex != "Unknown" & !is.na(urban)) %>%
   group_by(age_groups,sex,province,urban,month) %>% 
   summarize(count = n()) %>% ungroup()
-abc_asu<-abc_df %>% filter(sex != "Self described" & !is.na(urban)) %>% 
+abc_asu<-abc_df %>% 
+  filter(sex != "Self described" & !is.na(urban) & province != "YT" & !is.na(sampledate)) %>% 
   group_by(age_groups,sex,province,urban,month) %>% 
   summarize(count = n()) %>% ungroup()
-clsa_asu<-clsa_df %>% filter(!is.na(urban)) %>% 
+clsa_asu<-clsa_df %>% 
+  filter(!is.na(urban) & !is.na(sampledate)) %>% 
   group_by(age_groups,sex,province,urban,month) %>% 
   summarize(count = n()) %>% ungroup()
-can_asu<-can_df %>% group_by(age_groups,sex,province,urban,month) %>% 
+can_asu<-can_df %>% 
+  filter(!is.na(sampledate)) %>% 
+  group_by(age_groups,sex,province,urban,month) %>% 
   summarize(count = n()) %>% ungroup()
 
 cbs_countasu<-round((nrow(cbs_asu %>% filter (count > 25)))/nrow(cbs_asu),2) * 100
@@ -60,14 +69,15 @@ can_countasu<-round((nrow(can_asu %>% filter (count > 25)))/nrow(can_asu),2) * 1
 cbs_asr<-cbs_df %>% filter(race != "Missing") %>% 
   group_by(age_groups,sex,province,race,month) %>%
   summarize(count = n()) %>% ungroup()
-abc_asr<-abc_df %>% filter(sex != "Self described" &
-                             race != "pnts" & !is.na(race)) %>% 
+abc_asr<-abc_df %>% 
+  filter(sex != "Self described" &race != "pnts" &
+           !is.na(race) & province != "YT" & !is.na(sampledate)) %>% 
   group_by(age_groups,sex,province,race,month) %>%
   summarize(count = n()) %>% ungroup()
-clsa_asr<-clsa_df %>% filter(!is.na(race) & race != "pnts") %>% 
+clsa_asr<-clsa_df %>% filter(!is.na(race) & race != "pnts" & !is.na(sampledate)) %>% 
   group_by(age_groups,sex,province,race,month) %>%
   summarize(count = n()) %>% ungroup()
-can_asr<-can_df %>% filter(race != "pnts" & !is.na(race)) %>% 
+can_asr<-can_df %>% filter(race != "pnts" & !is.na(race) & !is.na(sampledate)) %>% 
   group_by(age_groups,sex,province,race,month) %>%
   summarize(count = n()) %>% ungroup()
 
@@ -81,14 +91,17 @@ cbs_asur<-cbs_df %>% filter(!is.na(urban) &
                               race != "Missing") %>% 
   group_by(age_groups,sex,province,urban,race,month) %>%
   summarize(count = n()) %>% ungroup()
-abc_asur<-abc_df %>% filter(sex != "Self described" & !is.na(urban) &
-                              race != "pnts" & !is.na(race)) %>% 
+abc_asur<-abc_df %>% 
+  filter(sex != "Self described" & !is.na(urban) &
+           race != "pnts" & !is.na(race) & province != "YT" & !is.na(sampledate)) %>% 
   group_by(age_groups,sex,province,urban,race,month) %>%
   summarize(count = n()) %>% ungroup()
-clsa_asur<-clsa_df %>% filter(!is.na(urban) &!is.na(race) & race != "pnts") %>% 
+clsa_asur<-clsa_df %>% 
+  filter(!is.na(urban) &!is.na(race) & race != "pnts" & !is.na(sampledate)) %>% 
   group_by(age_groups,sex,province,urban,race,month) %>%
   summarize(count = n()) %>% ungroup()
-can_asur<-can_df %>% filter(race != "pnts" & !is.na(race)) %>% 
+can_asur<-can_df %>% 
+  filter(race != "pnts" & !is.na(race) & !is.na(sampledate)) %>% 
   group_by(age_groups,sex,province,urban,race,month) %>%
   summarize(count = n()) %>% ungroup()
 
@@ -98,11 +111,11 @@ clsa_countasur<-round((nrow(clsa_asur %>% filter (count > 25)))/nrow(clsa_asur),
 can_countasur<-round((nrow(can_asur %>% filter (count > 25)))/nrow(can_asur),2) * 100
 
 #Collect into a data.frame
-df<-data.frame(Cohort = c("CBS blood donor (857,620)",
-                          "APL outpatient laboratory (168,125)",
-                          "Ab-c open cohort (24,455)",
-                          "CLSA closed cohort (12,834)",
-                          "Canpath closed cohort (20,817)"),
+df<-data.frame(Cohort = c("CBS blood donor (1035580)",
+                          "APL outpatient laboratory (208108)",
+                          "Ab-c open cohort (25110)",
+                          "CLSA closed cohort (13124)",
+                          "Canpath closed cohort (21720)"),
                Month_S = c(length(unique(cbs_asu$month)),length(unique(apl_asu$month)),
                                   length(unique(abc_asu$month)),length(unique(clsa_asu$month)),
                                   length(unique(can_asu$month))),
@@ -111,12 +124,75 @@ df<-data.frame(Cohort = c("CBS blood donor (857,620)",
                Age_Sex_Urban_Prov = c(cbs_countasu,apl_countasu,abc_countasu,
                                       clsa_countasu,can_countasu),
                Age_Sex_Race_Prov = c(cbs_countasr,NA,abc_countasr,
-                                     clsa_countasr,clsa_countasr),
+                                     clsa_countasr,can_countasr),
                Age_Sex_Race_Urban_Prov = c(cbs_countasur,NA,abc_countasur,
                                            clsa_countasur,can_countasur))
-
-df<-df[c(1:3,5,4),] #order by specimen count
+#Clean CCAHS-1 run and add to df
+ccahs1_out$Cohort<-"CCAHS-1 closed cohort (XXXX)"
+ccahs1_out[,4:7]<-lapply(ccahs1_out[,4:7], function(x){
+  x<-round(as.numeric(x,2))
+  return(x)})
+df<-rbind(df,ccahs1_out[,2:7])
+df<-df[c(1:3,5,4,6),] #order by specimen count
 colnames(df)[1]<-"Study (specimen count)"
 
 write_csv(df,"table_2_analysisjan222024.csv")
 
+# Sensitivity analysis 1: classify mixed race as "White" ------------------
+#Age-sex-race-province-month datasets
+abc_asr1<-abc_df %>% 
+  filter(sex != "Self described" &race1 != "pnts" &
+           !is.na(race1) & province != "YT" & !is.na(sampledate)) %>% 
+  group_by(age_groups,sex,province,race1,month) %>%
+  summarize(count = n()) %>% ungroup()
+clsa_asr1<-clsa_df %>% filter(!is.na(race1) & race1 != "pnts" & !is.na(sampledate)) %>% 
+  group_by(age_groups,sex,province,race1,month) %>%
+  summarize(count = n()) %>% ungroup()
+can_asr1<-can_df1 %>% filter(race1 != "pnts" & !is.na(race1) & !is.na(sampledate)) %>% 
+  group_by(age_groups,sex,province,race1,month) %>%
+  summarize(count = n()) %>% ungroup()
+
+abc_countasr1<-round((nrow(abc_asr1 %>% filter (count > 25))) / nrow(abc_asr1),2) * 100
+clsa_countasr1<-round((nrow(clsa_asr1 %>% filter (count > 25))) / nrow(clsa_asr1),2) * 100
+can_countasr1<-round((nrow(can_asr1 %>% filter (count > 25))) / nrow(can_asr1),2) * 100
+
+#Age-sex-urban-province-race-month datasets
+abc_asur1<-abc_df %>% 
+  filter(sex != "Self described" & !is.na(urban) &
+           race1 != "pnts" & !is.na(race1) & province != "YT" & !is.na(sampledate)) %>% 
+  group_by(age_groups,sex,province,urban,race1,month) %>%
+  summarize(count = n()) %>% ungroup()
+clsa_asur1<-clsa_df %>% 
+  filter(!is.na(urban) &!is.na(race1) & race1 != "pnts" & !is.na(sampledate)) %>% 
+  group_by(age_groups,sex,province,urban,race1,month) %>%
+  summarize(count = n()) %>% ungroup()
+can_asur1<-can_df1 %>% 
+  filter(race1 != "pnts" & !is.na(race1) & !is.na(sampledate)) %>% 
+  group_by(age_groups,sex,province,urban,race1,month) %>%
+  summarize(count = n()) %>% ungroup()
+
+clsa_countasur1<-round((nrow(clsa_asur1 %>% filter (count > 25)))/nrow(clsa_asur1),2) * 100
+abc_countasur1<-round((nrow(abc_asur1 %>% filter (count > 25)))/nrow(abc_asur1),2) * 100
+can_countasur1<-round((nrow(can_asur1 %>% filter (count > 25)))/nrow(can_asur1),2) * 100
+
+#Collect into a data.frame
+df1<-data.frame(Cohort = c("CBS blood donor (1035580)",
+                          "APL outpatient laboratory (208108)",
+                          "Ab-c open cohort (25110)",
+                          "CLSA closed cohort (13124)",
+                          "Canpath closed cohort (21720)"),
+               Month_S = c(length(unique(cbs_asu$month)),length(unique(apl_asu$month)),
+                           length(unique(abc_asu$month)),length(unique(clsa_asu$month)),
+                           length(unique(can_asu$month))),
+               Age_Sex_Prov = c(cbs_countas,apl_countas,abc_countas,clsa_countas,
+                                can_countas),
+               Age_Sex_Urban_Prov = c(cbs_countasu,apl_countasu,abc_countasu,
+                                      clsa_countasu,can_countasu),
+               Age_Sex_Race_Prov = c(cbs_countasr,NA,abc_countasr1,
+                                     clsa_countasr1,can_countasr1),
+               Age_Sex_Race_Urban_Prov = c(cbs_countasur,NA,abc_countasur1,
+                                           clsa_countasur1,can_countasur1))
+#Read in CCAHS-1 sensitivity analysis
+
+df1<-df1[c(1:3,5,4),] #order by specimen count
+colnames(df1)[1]<-"Study (specimen count)"
