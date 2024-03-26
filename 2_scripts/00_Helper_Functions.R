@@ -50,21 +50,19 @@ age_groups_fun <- function(variable){
 
 #Clean census data
 census_fun<-function(df){ #input dataframe
-  df<-df[,-1] #remove row id column
+  df<-df[df$age_groups != "All ages",-1] #remove row id column and all ages category
   df$age_groups<-case_when(df$age_groups == "56+ years" ~ "57+ years",
                            df$age_groups == "< 18 years" ~ "0-17 years",
                            df$age_groups == "18-26 years" ~ "18-26 years",
                            df$age_groups == "27-36 years" ~ "27-36 years",
                            df$age_groups == "37-46 years" ~ "37-46 years",
                            df$age_groups == "47-56 years" ~ "47-56 years",
-                           df$age_groups == "All ages" ~ "All ages",
                            TRUE ~ NA)
-  df<-df[df$age_groups != "All ages",]
   return(df)
   }
 
-#Clean CCAHS-1 age variable
-ccahs_age<-function(x){
+#Clean CCAHS-1 age_groups variable
+ccahs_age<-function(x){ #input age_groups column
   x<-case_when(x == "56+ years" ~ "57+ years",
                x == "< 18 years" ~ "0-17 years",
                x == "18-26 years" ~ "18-26 years",
@@ -74,6 +72,12 @@ ccahs_age<-function(x){
                x == "All ages" ~ "All ages",
                TRUE ~ NA)
   return(x)
+}
+
+#generate function to calculate proportion of RRs, for each subgroup, that are < 0.75
+rrfun<-function(x){
+  prop<-(sum(x < 0.75)) / length(x) #calculate proportion
+  return(prop)
 }
 
 #Classify ethnicity as white or racialize minority
@@ -151,7 +155,7 @@ w<-c("white newfoundlander","White British",
      "white celtic")
 
 #Classify rep ratio as either underrepresented, well represented, or overrepresented
-rr_binned_fun<-function(x){
+rr_binned_fun<-function(x){#input rep ratio column
   x<-case_when(
     x < 1/2 ~ "Strongly underrepresented (RR < 1/2)",
     x >= 1/2 & 

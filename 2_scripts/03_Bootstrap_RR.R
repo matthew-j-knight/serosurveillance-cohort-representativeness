@@ -4,41 +4,48 @@ underrepresented if 95% of the representativeness ratios fall below
 a threshold of 0.75."
 
 # Load libraries and data -------------------------------------------------
-setwd("~/serosurveillance-cohort-representativeness/1_data/private")
+setwd("~/serosurveillance-cohort-representativeness")
 library(tidyverse)
 
 #Read in serosurveillance study datasets
-cbs_df<-read.csv("cbs_df_jan222024.csv")
-apl_df<-read.csv("apl_df_jan222024.csv")
-abc_df<-read.csv("abc_df_jan222024.csv")
-clsa_df<-read.csv("clsa_df_jan222024.csv")
-can_df<-read.csv("can_df_jan222024.csv")
-can_df1<-read.csv("can_df1_jan222024.csv")
+cbs_df<-read.csv("./1_data/private/cbs_df_final.csv")
+apl_df<-read.csv("./1_data/private/apl_df_final.csv")
+abc_df<-read.csv("./1_data/private/abc_df_final.csv")
+clsa_df<-read.csv("./1_data/private/clsa_df_final.csv")
+can_df<-read.csv("./1_data/private/can_df_final.csv")
+can_df1<-read.csv("./1_data/private/can_df1_final.csv")
 
-#Read in 2021 census datasets (urban)
-a_asu<-read.csv("2021 Canadian Census/censusasu_a_abc.csv") #ab-c
-c_asu<-read.csv("2021 Canadian Census/censusasu_c_cbs.csv") #cbs
-d_asu<-read.csv("2021 Canadian Census/censusasu_d_canpath.csv") #canpath
-e_asu<-read.csv("2021 Canadian Census/censusasu_e_apl.csv") #apl
-g_asu<-read.csv("2021 Canadian Census/censusasu_g_clsa.csv") #clsa
+#Read in 2016 census datasets (urban)
+a_asu<-read.csv("./1_data/private/2016 Canadian Census/censusasu_a_abc.csv") #ab-c
+c_asu<-read.csv("./1_data/private/2016 Canadian Census/censusasu_c_cbs.csv") #cbs
+d_asu<-read.csv("./1_data/private/2016 Canadian Census/censusasu_d_canpath.csv") #canpath
+e_asu<-read.csv("./1_data/private/2016 Canadian Census/censusasu_e_apl.csv") #apl
+g_asu<-read.csv("./1_data/private/2016 Canadian Census/censusasu_g_clsa.csv") #clsa
 
-#Read in 2021 census datasets (race)
-a_asr<-read.csv("2021 Canadian Census/censusasr_a_abc.csv") #ab-c
-c_asr<-read.csv("2021 Canadian Census/censusasr_c_cbs.csv") #cbs
-d_asr<-read.csv("2021 Canadian Census/censusasr_d_canpath.csv") #canpath
-g_asr<-read.csv("2021 Canadian Census/censusasr_g_clsa.csv") #clsa
+#Read in 2016 census datasets (race)
+a_asr<-read.csv("./1_data/private/2016 Canadian Census/censusasr_a_abc.csv") #ab-c
+c_asr<-read.csv("./1_data/private/2016 Canadian Census/censusasr_c_cbs.csv") #cbs
+d_asr<-read.csv("./1_data/private/2016 Canadian Census/censusasr_d_canpath.csv") #canpath
+g_asr<-read.csv("./1_data/private/2016 Canadian Census/censusasr_g_clsa.csv") #clsa
 
-#Read in 2021 census datasets (quintmat) 
-c_sqm<-read.csv("2021 Canadian Census/censussqm_c_cbs.csv") #CBS
-e_sqm<-read.csv("2021 Canadian Census/censussqm_e_apl.csv") #APL
+#Read in 2016 census datasets (quintmat) 
+c_sqm<-read.csv("./1_data/private/2016 Canadian Census/censussqm_c_cbs.csv") #CBS
+e_sqm<-read.csv("./1_data/private/2016 Canadian Census/censussqm_e_apl.csv") #APL
 
-#Read in 2021 census datasets (quintsoc)
-c_sqs<-read.csv("2021 Canadian Census/censussqs_c_cbs.csv") #CBS
-e_sqs<-read.csv("2021 Canadian Census/censussqs_e_apl.csv") #APL
+#Read in 2016 census datasets (quintsoc)
+c_sqs<-read.csv("./1_data/private/2016 Canadian Census/censussqs_c_cbs.csv") #CBS
+e_sqs<-read.csv("./1_data/private/2016 Canadian Census/censussqs_e_apl.csv") #APL
 
-#Read in 2016 census datasets (territories)
-#f_as<-read.csv("2021 Canadian Census/censusas_f_ccahst.csv") #CCAHS territories
-#h_as<-read.csv("2021 Canadian Census/censusas_h_abct.csv")# Ab-c territories
+#Prepare 2016 census datasets for sensitivity analysis #1
+a_asr1<-a_asr %>% 
+  mutate(race1 = race)
+d_asr1<-d_asr %>% 
+  mutate(race1=race)
+g_asr1<-g_asr %>% 
+  mutate(race1=race)
+
+#Load functions
+source("2_scripts/00_Helper_Functions.R")
 
 # Bootstrap age-sex-urban representativeness ratios -----------------------
 # Setting A (Ab-c)
@@ -83,31 +90,17 @@ for(i in 1:n_replicates){
   #calculate proportions and RR
   subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
   subcount<-subcount[order(subcount$age_groups,subcount$sex,subcount$urban),]
-  pct_resample<-c(subcount$count[1:20] / sum(subcount$count[1:20],na.rm = T),
-                  subcount$count[21] / sum(subcount$count[1:20],na.rm = T),
-                  subcount$count[22:23] / sum(subcount$count[1:20],na.rm = T),
-                  subcount$count[24] / sum(subcount$count[1:20],na.rm = T),
-                  subcount$count[25:26] / sum(subcount$count[1:20],na.rm = T))
-  pct_pop<-c(subcount$count_census[1:20] / sum(subcount$count_census[1:20],na.rm = T),
-             subcount$count_census[21] / sum(subcount$count_census[1:20],na.rm = T),
-             subcount$count_census[22:23] / sum(subcount$count_census[1:20],na.rm = T),
-             subcount$count_census[24] / sum(subcount$count_census[1:20],na.rm = T),
-             subcount$count_census[25:26] / sum(subcount$count_census[1:20],na.rm = T))
-  rr<-pct_resample / pct_pop
+  subcount$pct_resample<-c(subcount$count / sum(subcount$count[1:20]))
+  subcount$pct_pop<-c(subcount$count_census / sum(subcount$count_census[1:20]))
+  subcount$rr<-subcount$pct_resample / subcount$pct_pop
   
   #save output to matrix
-  output[i,]<-rr
+  output[i,]<-subcount$rr
   print(paste("Run",i,"complete"))
 }
 
 #label columns and make data.frame
 output<-data.frame(output)
-
-#generate function to calculate proportion of RRs, for each subgroup, that are < 0.75
-rrfun<-function(x){
-  prop<-(sum(x < 0.75,na.rm = T)) / length(x) #calculate proportion
-  return(prop)
-}
 
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 abc_fin<-cbind(subcount[,c("age_groups","sex","urban")],sapply(output,rrfun))
@@ -131,7 +124,7 @@ abcsum_output<-data.frame(abcsum_output)
 colnames(abcsum_output)<-c("mean","2.5","25","50","75","95")
 abcsum_output<-cbind(abcsum_output,subcount[,c("age_groups","sex","urban")])
 
-write_csv(abc_fin,"boot_abc_asu_5000.csv")
+write_csv(abc_fin,"./1_data/private/boot_abc_asu_5000.csv")
 write_csv(abcsum_output,"boot_abc_asu_5000_sumstats.csv")
 
 #Setting B (CCAHS) 
@@ -177,31 +170,17 @@ for(i in 1:n_replicates){
   #calculate proportions and RR
   subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
   subcount<-subcount[order(subcount$age_groups,subcount$sex,subcount$urban),]
-  pct_resample<-c(subcount$count[1:20] / sum(subcount$count[1:20],na.rm = T),
-                  subcount$count[21] / sum(subcount$count[1:20],na.rm = T),
-                  subcount$count[22:23] / sum(subcount$count[1:20],na.rm = T),
-                  subcount$count[24] / sum(subcount$count[1:20],na.rm = T),
-                  subcount$count[25:26] / sum(subcount$count[1:20],na.rm = T))
-  pct_pop<-c(subcount$count_census[1:20] / sum(subcount$count_census[1:20],na.rm = T),
-             subcount$count_census[21] / sum(subcount$count_census[1:20],na.rm = T),
-             subcount$count_census[22:23] / sum(subcount$count_census[1:20],na.rm = T),
-             subcount$count_census[24] / sum(subcount$count_census[1:20],na.rm = T),
-             subcount$count_census[25:26] / sum(subcount$count_census[1:20],na.rm = T))
-  rr<-pct_resample / pct_pop
+  subcount$pct_resample<-c(subcount$count / sum(subcount$count[1:20]))
+  subcount$pct_pop<-c(subcount$count_census / sum(subcount$count_census[1:20]))
+  subcount$rr<-subcount$pct_resample / subcount$pct_pop
   
   #save output to matrix
-  output[i,]<-rr
+  output[i,]<-subcount$rr
   print(paste("Run",i,"complete"))
 }
 
 #label columns and make data.frame
 output<-data.frame(output)
-
-#generate function to calculate proportion of RRs, for each subgroup, that are < 0.75
-rrfun<-function(x){
-  prop<-(sum(x < 0.75,na.rm = T)) / length(x) #calculate proportion
-  return(prop)
-}
 
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 cbs_fin<-cbind(subcount[,c("age_groups","sex","urban")],sapply(output,rrfun))
@@ -225,7 +204,7 @@ cbssum_output<-data.frame(cbssum_output)
 colnames(cbssum_output)<-c("mean","2.5","25","50","75","95")
 cbssum_output<-cbind(cbssum_output,subcount[,c("age_groups","sex","urban")])
 
-write_csv(cbs_fin,"boot_cbs_asu_5000.csv")
+write_csv(cbs_fin,"./1_data/private/boot_cbs_asu_5000.csv")
 write_csv(cbssum_output,"boot_csb_asu_5000_sumstats.csv")
 
 #Setting D (Canpath)
@@ -269,31 +248,17 @@ for(i in 1:n_replicates){
   #calculate proportions and RR
   subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
   subcount<-subcount[order(subcount$age_groups,subcount$sex,subcount$urban),]
-  pct_resample<-c(subcount$count[1:20] / sum(subcount$count[1:20],na.rm = T),
-                  subcount$count[21] / sum(subcount$count[1:20],na.rm = T),
-                  subcount$count[22:23] / sum(subcount$count[1:20],na.rm = T),
-                  subcount$count[24] / sum(subcount$count[1:20],na.rm = T),
-                  subcount$count[25:26] / sum(subcount$count[1:20],na.rm = T))
-  pct_pop<-c(subcount$count_census[1:20] / sum(subcount$count_census[1:20],na.rm = T),
-             subcount$count_census[21] / sum(subcount$count_census[1:20],na.rm = T),
-             subcount$count_census[22:23] / sum(subcount$count_census[1:20],na.rm = T),
-             subcount$count_census[24] / sum(subcount$count_census[1:20],na.rm = T),
-             subcount$count_census[25:26] / sum(subcount$count_census[1:20],na.rm = T))
-  rr<-pct_resample / pct_pop
+  subcount$pct_resample<-c(subcount$count / sum(subcount$count[1:20]))
+  subcount$pct_pop<-c(subcount$count_census / sum(subcount$count_census[1:20]))
+  subcount$rr<-subcount$pct_resample / subcount$pct_pop
   
   #save output to matrix
-  output[i,]<-rr
+  output[i,]<-subcount$rr
   print(paste("Run",i,"complete"))
 }
 
 #label columns and make data.frame
 output<-data.frame(output)
-
-#generate function to calculate proportion of RRs, for each subgroup, that are < 0.75
-rrfun<-function(x){
-  prop<-(sum(x < 0.75,na.rm = T)) / length(x) #calculate proportion
-  return(prop)
-}
 
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 can_fin<-cbind(subcount[,c("age_groups","sex","urban")],sapply(output,rrfun))
@@ -316,7 +281,7 @@ cansum_output<-data.frame(cansum_output)
 colnames(cansum_output)<-c("mean","2.5","25","50","75","95")
 cansum_output<-cbind(cansum_output,subcount[,c("age_groups","sex","urban")])
 
-write_csv(can_fin,"boot_can_asu_5000.csv")
+write_csv(can_fin,"./1_data/private/boot_can_asu_5000.csv")
 write_csv(cansum_output,"boot_can_asu_5000_sumstats.csv")
 
 #Setting E (APL)
@@ -361,31 +326,17 @@ for(i in 1:n_replicates){
   #calculate proportions and RR
   subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
   subcount<-subcount[order(subcount$age_groups,subcount$sex,subcount$urban),]
-  pct_resample<-c(subcount$count[1:24] / sum(subcount$count[1:24],na.rm = T),
-                  subcount$count[25] / sum(subcount$count[1:24],na.rm = T),
-                  subcount$count[26:27] / sum(subcount$count[1:24],na.rm = T),
-                  subcount$count[28] / sum(subcount$count[1:24],na.rm = T),
-                  subcount$count[29:30] / sum(subcount$count[1:24],na.rm = T))
-  pct_pop<-c(subcount$count_census[1:24] / sum(subcount$count_census[1:24],na.rm = T),
-             subcount$count_census[25] / sum(subcount$count_census[1:24],na.rm = T),
-             subcount$count_census[26:27] / sum(subcount$count_census[1:24],na.rm = T),
-             subcount$count_census[28] / sum(subcount$count_census[1:24],na.rm = T),
-             subcount$count_census[29:30] / sum(subcount$count_census[1:24],na.rm = T))
-  rr<-pct_resample / pct_pop
+  subcount$pct_resample<-c(subcount$count / sum(subcount$count[1:24]))
+  subcount$pct_pop<-c(subcount$count_census / sum(subcount$count_census[1:24]))
+  subcount$rr<-subcount$pct_resample / subcount$pct_pop
   
   #save output to matrix
-  output[i,]<-rr
+  output[i,]<-subcount$rr
   print(paste("Run",i,"complete"))
 }
 
 #label columns and make data.frame
 output<-data.frame(output)
-
-#generate function to calculate proportion of RRs, for each subgroup, that are < 0.75
-rrfun<-function(x){
-  prop<-(sum(x < 0.75,na.rm = T)) / length(x) #calculate proportion
-  return(prop)
-}
 
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 apl_fin<-cbind(subcount[,c("age_groups","sex","urban")],sapply(output,rrfun))
@@ -409,7 +360,7 @@ aplsum_output<-data.frame(aplsum_output)
 colnames(aplsum_output)<-c("mean","2.5","25","50","75","95")
 aplsum_output<-cbind(aplsum_output,subcount[,c("age_groups","sex","urban")])
 
-write_csv(apl_fin,"boot_apl_asu_5000.csv")
+write_csv(apl_fin,"./1_data/private/boot_apl_asu_5000.csv")
 write_csv(aplsum_output,"boot_apl_asu_5000_sumstats.csv")
 
 #Setting F (CCAHS territories)
@@ -431,7 +382,6 @@ for(i in 1:n_replicates){
   
   #calculate counts by subgroup in resample
   group<-df %>% 
-    filter(!is.na(urban)) %>%
     group_by(age_groups,sex,urban) %>% 
     summarize(count = n()) %>% 
     ungroup()
@@ -442,7 +392,6 @@ for(i in 1:n_replicates){
   
   #across all age and urban categories
   alt1_allsu<-df %>% 
-    filter(!is.na(sex)) %>% 
     group_by(sex) %>% 
     summarize(count = n()) %>% 
     mutate(age_groups = "All ages",
@@ -457,31 +406,17 @@ for(i in 1:n_replicates){
   #calculate proportions and RR
   subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
   subcount<-subcount[order(subcount$age_groups,subcount$sex,subcount$urban),]
-  pct_resample<-c(subcount$count[1:8] / sum(subcount$count[1:8],na.rm = T),
-                  subcount$count[9] / sum(subcount$count[1:8],na.rm = T),
-                  subcount$count[10:11] / sum(subcount$count[1:8],na.rm = T),
-                  subcount$count[12] / sum(subcount$count[1:8],na.rm = T),
-                  subcount$count[13:14] / sum(subcount$count[1:8],na.rm = T))
-  pct_pop<-c(subcount$count_census[1:8] / sum(subcount$count_census[1:8],na.rm = T),
-             subcount$count_census[9] / sum(subcount$count_census[1:8],na.rm = T),
-             subcount$count_census[10:11] / sum(subcount$count_census[1:8],na.rm = T),
-             subcount$count_census[12] / sum(subcount$count_census[1:8],na.rm = T),
-             subcount$count_census[13:14] / sum(subcount$count_census[1:8],na.rm = T))
-  rr<-pct_resample / pct_pop
+  subcount$pct_resample<-c(subcount$count / sum(subcount$count[1:8]))
+  subcount$pct_pop<-c(subcount$count_census / sum(subcount$count_census[1:8]))
+  subcount$rr<-subcount$pct_resample / subcount$pct_pop
   
   #save output to matrix
-  output[i,]<-rr
+  output[i,]<-subcount$rr
   print(paste("Run",i,"complete"))
 }
 
 #label columns and make data.frame
 output<-data.frame(output)
-
-#generate function to calculate proportion of RRs, for each subgroup, that are < 0.75
-rrfun<-function(x){
-  prop<-(sum(x < 0.75,na.rm = T)) / length(x) #calculate proportion
-  return(prop)
-}
 
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 clsa_fin<-cbind(subcount[,c("age_groups","sex","urban")],sapply(output,rrfun))
@@ -505,7 +440,7 @@ clsasum_output<-data.frame(clsasum_output)
 colnames(clsasum_output)<-c("mean","2.5","25","50","75","95")
 clsasum_output<-cbind(clsasum_output,subcount[,c("age_groups","sex","urban")])
 
-write_csv(clsa_fin,"boot_clsa_asu_5000.csv")
+write_csv(clsa_fin,"./1_data/private/boot_clsa_asu_5000.csv")
 write_csv(clsasum_output,"boot_clsa_asu_5000_sumstats.csv")
 
 # Bootstrap age-sex-race representativeness ratios ------------------------
@@ -540,27 +475,21 @@ for(i in 1:n_replicates){
   
   #merge resample with corresponding census dataset
   subcount<-merge(group,a_asr,by = c("age_groups","sex","race"),all.y = TRUE)
+  
+  #calculate proportions and RR
   subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
   subcount<-subcount[order(subcount$age_groups,subcount$sex,subcount$race),]
-  pct_resample<-c(subcount$count[1:20] / sum(subcount$count[1:20],na.rm = T),
-                  subcount$count[21:24] / sum(subcount$count[21:24],na.rm = T))
-  pct_pop<-c(subcount$count_census[1:20] / sum(subcount$count_census[1:20],na.rm = T),
-             subcount$count_census[21:24] / sum(subcount$count_census[21:24],na.rm = T))
-  rr<-pct_resample / pct_pop
+  subcount$pct_resample<-c(subcount$count / sum(subcount$count[1:20]))
+  subcount$pct_pop<-c(subcount$count_census / sum(subcount$count_census[1:20]))
+  subcount$rr<-subcount$pct_resample / subcount$pct_pop
   
   #save output to matrix
-  output[i,]<-rr
+  output[i,]<-subcount$rr
   print(paste("Run",i,"complete"))
 }
 
 #label columns and make data.frame
 output<-data.frame(output)
-
-#generate function to calculate proportion of RRs, for each subgroup, that are < 0.75
-rrfun<-function(x){
-  prop<-(sum(x < 0.75,na.rm = T)) / length(x) #calculate proportion
-  return(prop)
-}
 
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 abcr_fin<-cbind(subcount[,c("age_groups","sex","race")],sapply(output,rrfun))
@@ -584,7 +513,7 @@ abcrsum_output<-data.frame(abcrsum_output)
 colnames(abcrsum_output)<-c("mean","2.5","25","50","75","95")
 abcrsum_output<-cbind(abcrsum_output,subcount[,c("age_groups","sex","race")])
 
-write_csv(abcr_fin,"boot_abc_asr_5000.csv")
+write_csv(abcr_fin,"./1_data/private/boot_abc_asr_5000.csv")
 write_csv(abcrsum_output,"boot_abc_asr_5000_sumstats.csv")
 
 #Setting B (CCAHS)
@@ -619,27 +548,21 @@ for(i in 1:n_replicates){
   
   #merge resample with corresponding census dataset
   subcount<-merge(group,c_asr,by = c("age_groups","sex","race"),all.y = TRUE)
+  
+  #calculate proportions and RR
   subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
   subcount<-subcount[order(subcount$age_groups,subcount$sex,subcount$race),]
-  pct_resample<-c(subcount$count[1:20] / sum(subcount$count[1:20],na.rm = T),
-                  subcount$count[21:24] / sum(subcount$count[21:24],na.rm = T))
-  pct_pop<-c(subcount$count_census[1:20] / sum(subcount$count_census[1:20],na.rm = T),
-             subcount$count_census[21:24] / sum(subcount$count_census[21:24],na.rm = T))
-  rr<-pct_resample / pct_pop
+  subcount$pct_resample<-c(subcount$count / sum(subcount$count[1:20]))
+  subcount$pct_pop<-c(subcount$count_census / sum(subcount$count_census[1:20]))
+  subcount$rr<-subcount$pct_resample / subcount$pct_pop
   
   #save output to matrix
-  output[i,]<-rr
+  output[i,]<-subcount$rr
   print(paste("Run",i,"complete"))
 }
 
 #label columns and make data.frame
 output<-data.frame(output)
-
-#generate function to calculate proportion of RRs, for each subgroup, that are < 0.75
-rrfun<-function(x){
-  prop<-(sum(x < 0.75,na.rm = T)) / length(x) #calculate proportion
-  return(prop)
-}
 
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 cbsr_fin<-cbind(subcount[,c("age_groups","sex","race")],sapply(output,rrfun))
@@ -663,7 +586,7 @@ cbsrsum_output<-data.frame(cbsrsum_output)
 colnames(cbsrsum_output)<-c("mean","2.5","25","50","75","95")
 cbsrsum_output<-cbind(cbsrsum_output,subcount[,c("age_groups","sex","race")])
 
-write_csv(cbsr_fin,"boot_cbs_asr_5000.csv")
+write_csv(cbsr_fin,"./1_data/private/boot_cbs_asr_5000.csv")
 write_csv(cbsrsum_output,"boot_cbs_asr_5000_sumstats.csv")
 
 #Setting D (Canpath)
@@ -695,27 +618,21 @@ for(i in 1:n_replicates){
   
   #merge resample with corresponding census dataset
   subcount<-merge(group,d_asr,by = c("age_groups","sex","race"),all.y = TRUE)
+  
+  #calculate proportions and RR
   subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
   subcount<-subcount[order(subcount$age_groups,subcount$sex,subcount$race),]
-  pct_resample<-c(subcount$count[1:20] / sum(subcount$count[1:20],na.rm = T),
-                  subcount$count[21:24] / sum(subcount$count[21:24],na.rm = T))
-  pct_pop<-c(subcount$count_census[1:20] / sum(subcount$count_census[1:20],na.rm = T),
-             subcount$count_census[21:24] / sum(subcount$count_census[21:24],na.rm = T))
-  rr<-pct_resample / pct_pop
+  subcount$pct_resample<-c(subcount$count / sum(subcount$count[1:20]))
+  subcount$pct_pop<-c(subcount$count_census / sum(subcount$count_census[1:20]))
+  subcount$rr<-subcount$pct_resample / subcount$pct_pop
   
   #save output to matrix
-  output[i,]<-rr
+  output[i,]<-subcount$rr
   print(paste("Run",i,"complete"))
 }
 
 #label columns and make data.frame
 output<-data.frame(output)
-
-#generate function to calculate proportion of RRs, for each subgroup, that are < 0.75
-rrfun<-function(x){
-  prop<-(sum(x < 0.75,na.rm = T)) / length(x) #calculate proportion
-  return(prop)
-}
 
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 canr_fin<-cbind(subcount[,c("age_groups","sex","race")],sapply(output,rrfun))
@@ -738,7 +655,7 @@ for(i in 1:ncol(output)){
 canrsum_output<-data.frame(canrsum_output)
 colnames(canrsum_output)<-c("mean","2.5","25","50","75","95")
 canrsum_output<-cbind(canrsum_output,subcount[,c("age_groups","sex","race")])
-write_csv(canr_fin,"boot_can_asr_5000.csv")
+write_csv(canr_fin,"./1_data/private/boot_can_asr_5000.csv")
 write_csv(canrsum_output,"boot_can_asr_5000_sumstats.csv")
 
 #Setting F (CCAHS territories)
@@ -777,25 +694,17 @@ for(i in 1:n_replicates){
   #calculate proportions and RR
   subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
   subcount<-subcount[order(subcount$age_groups,subcount$sex,subcount$race),]
-  pct_resample<-c(subcount$count[1:8] / sum(subcount$count[1:8],na.rm = T),
-                  subcount$count[9:12] / sum(subcount$count[9:12],na.rm = T))
-  pct_pop<-c(subcount$count_census[1:8] / sum(subcount$count_census[1:8],na.rm = T),
-             subcount$count_census[9:12] / sum(subcount$count_census[9:12],na.rm = T))
-  rr<-pct_resample / pct_pop
+  subcount$pct_resample<-c(subcount$count / sum(subcount$count[1:8]))
+  subcount$pct_pop<-c(subcount$count_census / sum(subcount$count_census[1:8]))
+  subcount$rr<-subcount$pct_resample / subcount$pct_pop
   
   #save output to matrix
-  output[i,]<-rr
+  output[i,]<-subcount$rr
   print(paste("Run",i,"complete"))
 }
 
 #label columns and make data.frame
 output<-data.frame(output)
-
-#generate function to calculate proportion of RRs, for each subgroup, that are < 0.75
-rrfun<-function(x){
-  prop<-(sum(x < 0.75,na.rm = T)) / length(x) #calculate proportion
-  return(prop)
-}
 
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 clsar_fin<-cbind(subcount[,c("age_groups","sex","race")],sapply(output,rrfun))
@@ -818,12 +727,10 @@ for(i in 1:ncol(output)){
 clsarsum_output<-data.frame(clsarsum_output)
 colnames(clsarsum_output)<-c("mean","2.5","25","50","75","95")
 clsarsum_output<-cbind(clsarsum_output,subcount[,c("age_groups","sex","race")])
-write_csv(clsar_fin,"boot_clsa_asr_5000.csv")
+write_csv(clsar_fin,"./1_data/private/boot_clsa_asr_5000.csv")
 write_csv(clsarsum_output,"boot_clsa_asr_5000_sumstats.csv")
 
 # Bootstrap sex-quintmat representation ratios ----------------------------
-
-#Setting B (CCAHS)
 
 #Setting C (CBS)
 #Initialize
@@ -834,7 +741,7 @@ collect<-NULL
 data<-cbs_df
 
 output<-matrix(NA,nrow = n_replicates,
-               ncol = 12)
+               ncol = 10)
 
 #Run for CBS
 set.seed(4)
@@ -849,36 +756,23 @@ for(i in 1:n_replicates){
     summarize(count = n()) %>% 
     ungroup()
   
-  #calculate counts by sex
-  alt<-aggregate(group,count ~ sex, FUN = sum, drop = F)
-  alt$quintmat<-"All quintiles"
-  group<-rbind(group,alt)
-  
   #merge resample with corresponding census dataset
   subcount<-merge(group,c_sqm,by = c("sex","quintmat"),all.y = TRUE)
   
   #calculate proportions and RR
   subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
   subcount<-subcount[order(subcount$quintmat,subcount$sex),]
-  pct_resample<-c(subcount$count[1:10] / sum(subcount$count[1:10],na.rm = T),
-                  subcount$count[11:12] / sum(subcount$count[11:12],na.rm = T))
-  pct_pop<-c(subcount$count_census[1:10] / sum(subcount$count_census[1:10],na.rm = T),
-             subcount$count_census[11:12] / sum(subcount$count_census[11:12],na.rm = T))
-  rr<-pct_resample / pct_pop
+  subcount$pct_resample<-c(subcount$count / sum(subcount$count))
+  subcount$pct_pop<-c(subcount$count_census / sum(subcount$count_census))
+  subcount$rr<-subcount$pct_resample / subcount$pct_pop
   
   #save output to matrix
-  output[i,]<-rr
+  output[i,]<-subcount$rr
   print(paste("Run",i,"complete"))
 }
 
 #label columns and make data.frame
 output<-data.frame(output)
-
-#generate function to calculate proportion of RRs, for each subgroup, that are < 0.75
-rrfun<-function(x){
-  prop<-(sum(x < 0.75,na.rm = T)) / length(x) #calculate proportion
-  return(prop)
-}
 
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 cbsqm_fin<-cbind(subcount[,c("sex","quintmat")],sapply(output,rrfun))
@@ -901,7 +795,7 @@ for(i in 1:ncol(output)){
 cbsqmsum_output<-data.frame(cbsqmsum_output)
 colnames(cbsqmsum_output)<-c("mean","2.5","25","50","75","95")
 cbsqmsum_output<-cbind(cbsqmsum_output,subcount[,c("sex","quintmat")])
-write_csv(cbsqm_fin,"boot_cbs_sqm_5000.csv")
+write_csv(cbsqm_fin,"./1_data/private/boot_cbs_sqm_5000.csv")
 write_csv(cbsqmsum_output,"boot_cbs_sqm_5000_sumstats.csv")
 
 #Setting E (APL)
@@ -913,7 +807,7 @@ collect<-NULL
 data<-apl_df
 
 output<-matrix(NA,nrow = n_replicates,
-               ncol = 12)
+               ncol = 10)
 
 #Run for APL
 set.seed(4)
@@ -928,36 +822,23 @@ for(i in 1:n_replicates){
     summarize(count = n()) %>% 
     ungroup()
   
-  #calculate counts by sex
-  alt<-aggregate(group,count ~ sex, FUN = sum, drop = F)
-  alt$quintmat<-"All quintiles"
-  group<-rbind(group,alt)
-  
   #merge resample with corresponding census dataset
-  subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
   subcount<-merge(group,e_sqm,by = c("sex","quintmat"),all.y = TRUE)
   
   #calculate proportions and RR
+  subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
   subcount<-subcount[order(subcount$quintmat,subcount$sex),]
-  pct_resample<-c(subcount$count[1:10] / sum(subcount$count[1:10],na.rm = T),
-                  subcount$count[11:12] / sum(subcount$count[11:12],na.rm = T))
-  pct_pop<-c(subcount$count_census[1:10] / sum(subcount$count_census[1:10],na.rm = T),
-             subcount$count_census[11:12] / sum(subcount$count_census[11:12],na.rm = T))
-  rr<-pct_resample / pct_pop
+  subcount$pct_resample<-c(subcount$count / sum(subcount$count))
+  subcount$pct_pop<-c(subcount$count_census / sum(subcount$count_census))
+  subcount$rr<-subcount$pct_resample / subcount$pct_pop
   
   #save output to matrix
-  output[i,]<-rr
+  output[i,]<-subcount$rr
   print(paste("Run",i,"complete"))
 }
 
 #label columns and make data.frame
 output<-data.frame(output)
-
-#generate function to calculate proportion of RRs, for each subgroup, that are < 0.75
-rrfun<-function(x){
-  prop<-(sum(x < 0.75)) / length(x) #calculate proportion
-  return(prop)
-}
 
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 aplqm_fin<-cbind(subcount[,c("sex","quintmat")],sapply(output,rrfun))
@@ -980,7 +861,7 @@ for(i in 1:ncol(output)){
 aplqmsum_output<-data.frame(aplqmsum_output)
 colnames(aplqmsum_output)<-c("mean","2.5","25","50","75","95")
 aplqmsum_output<-cbind(aplqmsum_output,subcount[,c("sex","quintmat")])
-write_csv(aplqm_fin,"boot_apl_sqm_5000.csv")
+write_csv(aplqm_fin,"./1_data/private/boot_apl_sqm_5000.csv")
 write_csv(aplqmsum_output,"boot_apl_sqm_5000_sumstats.csv")
 
 #Setting F (CCAHS territories)
@@ -988,14 +869,14 @@ write_csv(aplqmsum_output,"boot_apl_sqm_5000_sumstats.csv")
 # Bootstrap sex-quintsoc representation ratios ----------------------------
 #Setting C (CBS)
 #Initialize
-n_replicates<-100 #number of bootstrap iterations
+n_replicates<-5000 #number of bootstrap iterations
 collect<-NULL
 
 #Manually add in required dataset as "data" and set up .csv at the bottom (saves computational resources)
 data<-cbs_df
 
 output<-matrix(NA,nrow = n_replicates,
-               ncol = 12)
+               ncol = 10)
 
 #Run for CBS
 set.seed(4)
@@ -1010,36 +891,23 @@ for(i in 1:n_replicates){
     summarize(count = n()) %>% 
     ungroup()
   
-  #calculate counts by sex
-  alt<-aggregate(group,count ~ sex, FUN = sum, drop = F)
-  alt$quintsoc<-"All quintiles"
-  group<-rbind(group,alt)
-  
   #merge resample with corresponding census dataset
   subcount<-merge(group,c_sqs,by = c("sex","quintsoc"),all.y = TRUE)
   
   #calculate proportions and RR
   subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
   subcount<-subcount[order(subcount$quintsoc,subcount$sex),]
-  pct_resample<-c(subcount$count[1:10] / sum(subcount$count[1:10],na.rm = T),
-                  subcount$count[11:12] / sum(subcount$count[11:12],na.rm = T))
-  pct_pop<-c(subcount$count_census[1:10] / sum(subcount$count_census[1:10],na.rm = T),
-             subcount$count_census[11:12] / sum(subcount$count_census[11:12],na.rm = T))
-  rr<-pct_resample / pct_pop
+  subcount$pct_resample<-c(subcount$count / sum(subcount$count))
+  subcount$pct_pop<-c(subcount$count_census / sum(subcount$count_census))
+  subcount$rr<-subcount$pct_resample / subcount$pct_pop
   
   #save output to matrix
-  output[i,]<-rr
+  output[i,]<-subcount$rr
   print(paste("Run",i,"complete"))
 }
 
 #label columns and make data.frame
 output<-data.frame(output)
-
-#generate function to calculate proportion of RRs, for each subgroup, that are < 0.75
-rrfun<-function(x){
-  prop<-(sum(x < 0.75,na.rm = T)) / length(x) #calculate proportion
-  return(prop)
-}
 
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 cbsqs_fin<-cbind(subcount[,c("sex","quintsoc")],sapply(output,rrfun))
@@ -1062,19 +930,19 @@ for(i in 1:ncol(output)){
 cbsqssum_output<-data.frame(cbsqssum_output)
 colnames(cbsqssum_output)<-c("mean","2.5","25","50","75","95")
 cbsqssum_output<-cbind(cbsqssum_output,subcount[,c("sex","quintsoc")])
-write_csv(cbsqs_fin,"boot_cbs_sqs_5000.csv")
+write_csv(cbsqs_fin,"./1_data/private/boot_cbs_sqs_5000.csv")
 write_csv(cbsqssum_output,"boot_cbs_sqs_5000_sumstats.csv")
 
 #Setting E (APL)
 #Initialize
-n_replicates<-100 #number of bootstrap iterations
+n_replicates<-5000 #number of bootstrap iterations
 collect<-NULL
 
 #Manually add in required dataset as "data" and set up .csv at the bottom (saves computational resources)
 data<-apl_df
 
 output<-matrix(NA,nrow = n_replicates,
-               ncol = 12)
+               ncol = 10)
 
 #Run for APL
 set.seed(4)
@@ -1089,36 +957,23 @@ for(i in 1:n_replicates){
     summarize(count = n()) %>% 
     ungroup()
   
-  #calculate counts by sex
-  alt<-aggregate(group,count ~ sex, FUN = sum, drop = F)
-  alt$quintsoc<-"All quintiles"
-  group<-rbind(group,alt)
-  
   #merge resample with corresponding census dataset
-  subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
   subcount<-merge(group,e_sqs,by = c("sex","quintsoc"),all.y = TRUE)
   
   #calculate proportions and RR
+  subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
   subcount<-subcount[order(subcount$quintsoc,subcount$sex),]
-  pct_resample<-c(subcount$count[1:10] / sum(subcount$count[1:10],na.rm = T),
-                  subcount$count[11:12] / sum(subcount$count[11:12],na.rm = T))
-  pct_pop<-c(subcount$count_census[1:10] / sum(subcount$count_census[1:10],na.rm = T),
-             subcount$count_census[11:12] / sum(subcount$count_census[11:12],na.rm = T))
-  rr<-pct_resample / pct_pop
+  subcount$pct_resample<-c(subcount$count / sum(subcount$count))
+  subcount$pct_pop<-c(subcount$count_census / sum(subcount$count_census))
+  subcount$rr<-subcount$pct_resample / subcount$pct_pop
   
   #save output to matrix
-  output[i,]<-rr
+  output[i,]<-subcount$rr
   print(paste("Run",i,"complete"))
 }
 
 #label columns and make data.frame
 output<-data.frame(output)
-
-#generate function to calculate proportion of RRs, for each subgroup, that are < 0.75
-rrfun<-function(x){
-  prop<-(sum(x < 0.75)) / length(x) #calculate proportion
-  return(prop)
-}
 
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 aplqs_fin<-cbind(subcount[,c("sex","quintsoc")],sapply(output,rrfun))
@@ -1141,12 +996,12 @@ for(i in 1:ncol(output)){
 aplqssum_output<-data.frame(aplqssum_output)
 colnames(aplqssum_output)<-c("mean","2.5","25","50","75","95")
 aplqssum_output<-cbind(aplqssum_output,subcount[,c("sex","quintsoc")])
-write_csv(aplqs_fin,"boot_apl_sqs_5000.csv")
+write_csv(aplqs_fin,"./1_data/private/boot_apl_sqs_5000.csv")
 write_csv(aplqssum_output,"boot_apl_sqs_5000_sumstats.csv")
 
 # Bootstrap age-sex representation ratios (territories) -------------------
 #Setting F (CCAHS territories)
-
+'
 #Setting H (Ab-c territories)
 n_replicates<-5000 #number of bootstrap iterations
 collect<-NULL
@@ -1173,28 +1028,22 @@ for(i in 1:n_replicates){
   
   #calculate proportions and RR
   subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
-  subcount<-subcount[order(subcount$age_groups,subcount$sex),]
-  pct_resample<-c(subcount$count / sum(subcount$count,na.rm = T))
-  pct_pop<-c(subcount$count_census / sum(subcount$count_census,na.rm = T))
-  rr<-pct_resample / pct_pop
+  subcount<-subcount[order(subcount$quintsoc,subcount$sex),]
+  subcount$pct_resample<-c(subcount$count / sum(subcount$count))
+  subcount$pct_pop<-c(subcount$count_census / sum(subcount$count_census))
+  subcount$rr<-subcount$pct_resample / subcount$pct_pop
   
   #save output to matrix
-  output[i,]<-rr
+  output[i,]<-subcount$rr
   print(paste("Run",i,"complete"))
 }
 
 #label columns and make data.frame
 output<-data.frame(output)
 
-#generate function to calculate proportion of RRs, for each subgroup, that are < 0.75
-rrfun<-function(x){
-  prop<-(sum(x < 0.75,na.rm = T)) / length(x) #calculate proportion
-  return(prop)
-}
-
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 abct_fin<-cbind(subcount[,c("age_groups","sex")],sapply(output,rrfun))
-colnames(abc_fint)[3]<-"rr_prob"
+colnames(abct_fin)[3]<-"rr_prob"
 abct_fin$cohort<-"Ab-c open cohort"
 
 #calculate summary statistics (quantiles,mean)
@@ -1214,8 +1063,8 @@ abctsum_output<-data.frame(abctsum_output)
 colnames(abctsum_output)<-c("mean","2.5","25","50","75","95")
 abctsum_output<-cbind(abctsum_output,subcount[,c("age_groups","sex")])
 
-write_csv(abct_fin,"boot_abc_asu_5000.csv")
-write_csv(abctsum_output,"boot_abc_asu_5000_sumstats.csv")
+write_csv(abct_fin,"./1_data/private/boot_abct_asu_5000.csv")
+write_csv(abctsum_output,"boot_abct_asu_5000_sumstats.csv")'
 
 # Sensitivity analysis 1: classify mixed race as "White" ------------------
 #Bootstrap age-sex-race representation ratios
@@ -1249,27 +1098,20 @@ for(i in 1:n_replicates){
   
   #merge resample with corresponding census dataset
   subcount<-merge(group,a_asr1,by = c("age_groups","sex","race1"),all.y = TRUE)
+  
   subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
   subcount<-subcount[order(subcount$age_groups,subcount$sex,subcount$race1),]
-  pct_resample<-c(subcount$count[1:20] / sum(subcount$count[1:20],na.rm = T),
-                  subcount$count[21:24] / sum(subcount$count[21:24],na.rm = T))
-  pct_pop<-c(subcount$count_census[1:20] / sum(subcount$count_census[1:20],na.rm = T),
-             subcount$count_census[21:24] / sum(subcount$count_census[21:24],na.rm = T))
-  rr<-pct_resample / pct_pop
+  subcount$pct_resample<-c(subcount$count / sum(subcount$count[1:20]))
+  subcount$pct_pop<-c(subcount$count_census / sum(subcount$count_census[1:20]))
+  subcount$rr<-subcount$pct_resample / subcount$pct_pop
   
   #save output to matrix
-  output[i,]<-rr
+  output[i,]<-subcount$rr
   print(paste("Run",i,"complete"))
 }
 
 #label columns and make data.frame
 output<-data.frame(output)
-
-#generate function to calculate proportion of RRs, for each subgroup, that are < 0.75
-rrfun<-function(x){
-  prop<-(sum(x < 0.75,na.rm = T)) / length(x) #calculate proportion
-  return(prop)
-}
 
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 abcr1_fin<-cbind(subcount[,c("age_groups","sex","race1")],sapply(output,rrfun))
@@ -1293,7 +1135,7 @@ abcr1sum_output<-data.frame(abcr1sum_output)
 colnames(abcr1sum_output)<-c("mean","2.5","25","50","75","95")
 abcr1sum_output<-cbind(abcr1sum_output,subcount[,c("age_groups","sex","race1")])
 
-write_csv(abcr1_fin,"boot_abc_asr1_5000.csv")
+write_csv(abcr1_fin,"./1_data/private/boot_abc_asr1_5000.csv")
 write_csv(abcr1sum_output,"boot_abc_asr1_5000_sumstats.csv")
 
 #Setting D (Canpath)
@@ -1325,27 +1167,20 @@ for(i in 1:n_replicates){
   
   #merge resample with corresponding census dataset
   subcount<-merge(group,d_asr1,by = c("age_groups","sex","race1"),all.y = TRUE)
+  
   subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
   subcount<-subcount[order(subcount$age_groups,subcount$sex,subcount$race1),]
-  pct_resample<-c(subcount$count[1:20] / sum(subcount$count[1:20],na.rm = T),
-                  subcount$count[21:24] / sum(subcount$count[21:24],na.rm = T))
-  pct_pop<-c(subcount$count_census[1:20] / sum(subcount$count_census[1:20],na.rm = T),
-             subcount$count_census[21:24] / sum(subcount$count_census[21:24],na.rm = T))
-  rr<-pct_resample / pct_pop
+  subcount$pct_resample<-c(subcount$count / sum(subcount$count[1:20]))
+  subcount$pct_pop<-c(subcount$count_census / sum(subcount$count_census[1:20]))
+  subcount$rr<-subcount$pct_resample / subcount$pct_pop
   
   #save output to matrix
-  output[i,]<-rr
+  output[i,]<-subcount$rr
   print(paste("Run",i,"complete"))
 }
 
 #label columns and make data.frame
 output<-data.frame(output)
-
-#generate function to calculate proportion of RRs, for each subgroup, that are < 0.75
-rrfun<-function(x){
-  prop<-(sum(x < 0.75,na.rm = T)) / length(x) #calculate proportion
-  return(prop)
-}
 
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 canr1_fin<-cbind(subcount[,c("age_groups","sex","race1")],sapply(output,rrfun))
@@ -1368,7 +1203,7 @@ for(i in 1:ncol(output)){
 canr1sum_output<-data.frame(canr1sum_output)
 colnames(canr1sum_output)<-c("mean","2.5","25","50","75","95")
 canr1sum_output<-cbind(canr1sum_output,subcount[,c("age_groups","sex","race1")])
-write_csv(canr1_fin,"boot_can_asr1_5000.csv")
+write_csv(canr1_fin,"./1_data/private/boot_can_asr1_5000.csv")
 write_csv(canr1sum_output,"boot_can_asr1_5000_sumstats.csv")
 
 #Setting G (CLSA)
@@ -1405,25 +1240,17 @@ for(i in 1:n_replicates){
   #calculate proportions and RR
   subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
   subcount<-subcount[order(subcount$age_groups,subcount$sex,subcount$race1),]
-  pct_resample<-c(subcount$count[1:8] / sum(subcount$count[1:8],na.rm = T),
-                  subcount$count[9:12] / sum(subcount$count[9:12],na.rm = T))
-  pct_pop<-c(subcount$count_census[1:8] / sum(subcount$count_census[1:8],na.rm = T),
-             subcount$count_census[9:12] / sum(subcount$count_census[9:12],na.rm = T))
-  rr<-pct_resample / pct_pop
+  subcount$pct_resample<-c(subcount$count / sum(subcount$count[1:8]))
+  subcount$pct_pop<-c(subcount$count_census / sum(subcount$count_census[1:8]))
+  subcount$rr<-subcount$pct_resample / subcount$pct_pop
   
   #save output to matrix
-  output[i,]<-rr
+  output[i,]<-subcount$rr
   print(paste("Run",i,"complete"))
 }
 
 #label columns and make data.frame
 output<-data.frame(output)
-
-#generate function to calculate proportion of RRs, for each subgroup, that are < 0.75
-rrfun<-function(x){
-  prop<-(sum(x < 0.75,na.rm = T)) / length(x) #calculate proportion
-  return(prop)
-}
 
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 clsar1_fin<-cbind(subcount[,c("age_groups","sex","race1")],sapply(output,rrfun))
@@ -1446,6 +1273,5 @@ for(i in 1:ncol(output)){
 clsar1sum_output<-data.frame(clsar1sum_output)
 colnames(clsar1sum_output)<-c("mean","2.5","25","50","75","95")
 clsar1sum_output<-cbind(clsar1sum_output,subcount[,c("age_groups","sex","race1")])
-write_csv(clsar1_fin,"boot_clsa_asr1_5000.csv")
+write_csv(clsar1_fin,"./1_data/private/boot_clsa_asr1_5000.csv")
 write_csv(clsar1sum_output,"boot_clsa_asr1_5000_sumstats.csv")
-

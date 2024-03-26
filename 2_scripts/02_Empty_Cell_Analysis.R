@@ -2,17 +2,18 @@
 by multiple demographic variables, we calculate the proportion of cells 
 with counts greater than 25."
 
-# Read in count tables from csv ------------------------------------------
-setwd("~/serosurveillance-cohort-representativeness/1_data/private")
+# Read in count tables ------------------------------------------
+setwd("~/serosurveillance-cohort-representativeness")
 library(tidyverse)
 library(scales)
-cbs_df<-read.csv("cbs_df_jan222024.csv")
-apl_df<-read.csv("apl_df_jan222024.csv")
-abc_df<-read.csv("abc_df_jan222024.csv")
-clsa_df<-read.csv("clsa_df_jan222024.csv")
-can_df<-read.csv("can_df_jan222024.csv")
-can_df1<-read.csv("can_df1_jan222024.csv")
-ccahs1_out<-read_xlsx("2021 Canadian Census/10285/Sortie_CCAHS_Census_ratio/df_emptycell.xlsx")
+library(readxl)
+cbs_df<-read.csv("./1_data/private/cbs_df_final.csv")
+apl_df<-read.csv("./1_data/private/apl_df_final.csv")
+abc_df<-read.csv("./1_data/private/abc_df_final.csv")
+clsa_df<-read.csv("./1_data/private/clsa_df_final.csv")
+can_df<-read.csv("./1_data/private/can_df_final.csv")
+can_df1<-read.csv("./1_data/private/can_df1_final.csv")
+ccahs1_out<-read_xlsx("./1_data/private/2016 Canadian Census/10285/Sortie_CCAHS_Census_ratio/df_emptycell.xlsx")
 
 #Run analysis ------------------------
 #Age-sex-province-month datasets
@@ -51,7 +52,7 @@ abc_asu<-abc_df %>%
   group_by(age_groups,sex,province,urban,month) %>% 
   summarize(count = n()) %>% ungroup()
 clsa_asu<-clsa_df %>% 
-  filter(!is.na(urban) & !is.na(sampledate)) %>% 
+  filter(!is.na(sampledate)) %>% 
   group_by(age_groups,sex,province,urban,month) %>% 
   summarize(count = n()) %>% ungroup()
 can_asu<-can_df %>% 
@@ -97,7 +98,7 @@ abc_asur<-abc_df %>%
   group_by(age_groups,sex,province,urban,race,month) %>%
   summarize(count = n()) %>% ungroup()
 clsa_asur<-clsa_df %>% 
-  filter(!is.na(urban) &!is.na(race) & race != "pnts" & !is.na(sampledate)) %>% 
+  filter(!is.na(race) & race != "pnts" & !is.na(sampledate)) %>% 
   group_by(age_groups,sex,province,urban,race,month) %>%
   summarize(count = n()) %>% ungroup()
 can_asur<-can_df %>% 
@@ -112,13 +113,15 @@ can_countasur<-round((nrow(can_asur %>% filter (count > 25)))/nrow(can_asur),2) 
 
 #Collect into a data.frame
 df<-data.frame(Cohort = c("CBS blood donor (1035580)",
-                          "APL outpatient laboratory (208108)",
+                          "APL outpatient laboratory (208110)",
                           "Ab-c open cohort (25110)",
                           "CLSA closed cohort (13124)",
                           "Canpath closed cohort (21720)"),
-               Month_S = c(length(unique(cbs_asu$month)),length(unique(apl_asu$month)),
-                                  length(unique(abc_asu$month)),length(unique(clsa_asu$month)),
-                                  length(unique(can_asu$month))),
+               Month_S = c(length(unique(floor_date(as.Date(cbs_df$sampledate),"1 month"))),
+                           length(unique(floor_date(as.Date(apl_df$sampledate),"1 month"))),
+                           length(unique(floor_date(as.Date(abc_df[!is.na(abc_df$sampledate),]$sampledate),"1 month"))),
+                           length(unique(floor_date(as.Date(clsa_df[!is.na(clsa_df$sampledate),]$sampledate),"1 month"))),
+                           length(unique(floor_date(as.Date(can_df[!is.na(can_df$sampledate),]$sampledate),"1 month")))),
                Age_Sex_Prov = c(cbs_countas,apl_countas,abc_countas,clsa_countas,
                                 can_countas),
                Age_Sex_Urban_Prov = c(cbs_countasu,apl_countasu,abc_countasu,
@@ -128,15 +131,16 @@ df<-data.frame(Cohort = c("CBS blood donor (1035580)",
                Age_Sex_Race_Urban_Prov = c(cbs_countasur,NA,abc_countasur,
                                            clsa_countasur,can_countasur))
 #Clean CCAHS-1 run and add to df
-ccahs1_out$Cohort<-"CCAHS-1 closed cohort (XXXX)"
+ccahs1_out$Cohort<-"CCAHS-1 closed cohort (XX)"
 ccahs1_out[,4:7]<-lapply(ccahs1_out[,4:7], function(x){
   x<-round(as.numeric(x,2))
   return(x)})
+ccahs1_out$Month_S<-6
 df<-rbind(df,ccahs1_out[,2:7])
 df<-df[c(1:3,5,4,6),] #order by specimen count
 colnames(df)[1]<-"Study (specimen count)"
 
-write_csv(df,"table_2_analysisjan222024.csv")
+write_csv(df,"./4_output/table_2_analysisfinal.csv")
 
 # Sensitivity analysis 1: classify mixed race as "White" ------------------
 #Age-sex-race-province-month datasets
@@ -163,7 +167,7 @@ abc_asur1<-abc_df %>%
   group_by(age_groups,sex,province,urban,race1,month) %>%
   summarize(count = n()) %>% ungroup()
 clsa_asur1<-clsa_df %>% 
-  filter(!is.na(urban) &!is.na(race1) & race1 != "pnts" & !is.na(sampledate)) %>% 
+  filter(!is.na(race1) & race1 != "pnts" & !is.na(sampledate)) %>% 
   group_by(age_groups,sex,province,urban,race1,month) %>%
   summarize(count = n()) %>% ungroup()
 can_asur1<-can_df1 %>% 
@@ -171,19 +175,21 @@ can_asur1<-can_df1 %>%
   group_by(age_groups,sex,province,urban,race1,month) %>%
   summarize(count = n()) %>% ungroup()
 
-clsa_countasur1<-round((nrow(clsa_asur1 %>% filter (count > 25)))/nrow(clsa_asur1),2) * 100
 abc_countasur1<-round((nrow(abc_asur1 %>% filter (count > 25)))/nrow(abc_asur1),2) * 100
+clsa_countasur1<-round((nrow(clsa_asur1 %>% filter (count > 25)))/nrow(clsa_asur1),2) * 100
 can_countasur1<-round((nrow(can_asur1 %>% filter (count > 25)))/nrow(can_asur1),2) * 100
 
 #Collect into a data.frame
 df1<-data.frame(Cohort = c("CBS blood donor (1035580)",
-                          "APL outpatient laboratory (208108)",
-                          "Ab-c open cohort (25110)",
-                          "CLSA closed cohort (13124)",
-                          "Canpath closed cohort (21720)"),
-               Month_S = c(length(unique(cbs_asu$month)),length(unique(apl_asu$month)),
-                           length(unique(abc_asu$month)),length(unique(clsa_asu$month)),
-                           length(unique(can_asu$month))),
+                           "APL outpatient laboratory (208110)",
+                           "Ab-c open cohort (25110)",
+                           "CLSA closed cohort (13124)",
+                           "Canpath closed cohort (21720)"),
+                Month_S = c(length(unique(floor_date(as.Date(cbs_df$sampledate),"1 month"))),
+                            length(unique(floor_date(as.Date(apl_df$sampledate),"1 month"))),
+                            length(unique(floor_date(as.Date(abc_df[!is.na(abc_df$sampledate),]$sampledate),"1 month"))),
+                            length(unique(floor_date(as.Date(clsa_df[!is.na(clsa_df$sampledate),]$sampledate),"1 month"))),
+                            length(unique(floor_date(as.Date(can_df1[!is.na(can_df1$sampledate),]$sampledate),"1 month")))),
                Age_Sex_Prov = c(cbs_countas,apl_countas,abc_countas,clsa_countas,
                                 can_countas),
                Age_Sex_Urban_Prov = c(cbs_countasu,apl_countasu,abc_countasu,
@@ -192,7 +198,9 @@ df1<-data.frame(Cohort = c("CBS blood donor (1035580)",
                                      clsa_countasr1,can_countasr1),
                Age_Sex_Race_Urban_Prov = c(cbs_countasur,NA,abc_countasur1,
                                            clsa_countasur1,can_countasur1))
-#Read in CCAHS-1 sensitivity analysis
+
+#XXXX: Read in CCAHS-1 sensitivity analysis
 
 df1<-df1[c(1:3,5,4),] #order by specimen count
 colnames(df1)[1]<-"Study (specimen count)"
+write_csv(df1,"./4_output/table_2_analysisfinal1.csv")
