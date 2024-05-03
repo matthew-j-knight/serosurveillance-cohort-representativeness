@@ -9,6 +9,7 @@ library(tidyverse)# loads readr
 library(DBI)
 library(RPostgres)
 library(readxl)
+library(tableone)
 
 "#CBS CITF Serology dataset import
 #Test connection arguments
@@ -25,7 +26,7 @@ cbs_data <- dbReadTable(con, SQL('students.copy_cbs_combined'))
 #Disconnect from database once data is loaded into R
 dbDisconnect(con)
 
-write_csv(cbs_data,'cbs_unmodified_df_backup_final.csv')"
+#write_csv(cbs_data,'cbs_unmodified_df_backup_final.csv')"
 cbs_data<-read.csv("./1_data/private/CBS/cbs_unmodified_df_backup_final.csv")
 
 #APL dataset import
@@ -111,6 +112,11 @@ cbs_data$sex<-case_when(
   cbs_data$sex == "M" ~ "Male"
 )
 
+#For each participant, carry forward/backward race variable to replace
+# NAs for a given donation
+cbs_data<-cbs_data %>% mutate(race = ifelse(race == "Missing",NA,race)) %>% 
+  fill(race,.direction = "downup")
+
 #Generate final df
 nrow(cbs_data[is.na(cbs_data$cur_result_n) & is.na(cbs_data$cur_result_s),]) #0 - all participants have a serology result
 cbs_df<-cbs_data %>% 
@@ -145,14 +151,12 @@ cbs_asu<-do.call("rbind",list(cbs_asu,cbs_allu,cbs_allsu))
 
 #Generate counts by age-sex-race strata
 cbs_asr<-cbs_df %>% 
-  filter(race != "Missing") %>% 
   group_by(age_groups,sex,race) %>% 
   summarize(count = n()) %>% 
   ungroup()
 
 #Generate counts by sex-race strata and combine
 cbs_allr<-cbs_df %>% 
-  filter(race != "Missing") %>% 
   group_by(sex,race) %>% 
   summarize(count = n()) %>% 
   mutate(age_groups = "All ages") %>% 
@@ -644,7 +648,7 @@ abc_allr1<-abc_df %>%
   ungroup()
 abc_asr1<-rbind(abc_asr1,abc_allr1)
 
-#Write to csv
+#Save to csv
 #write_csv(abc_asu,"./1_data/private/abc_asu_final.csv")
 #write_csv(abc_asr,"./1_data/private/abc_asr_final.csv")
 #write_csv(abc_df,"./1_data/private/abc_df_final.csv")
@@ -661,7 +665,7 @@ df_all_clsa <- merge(df_clsa_anti[,c("entity_id","SER_AGE_COV", "SER_SEX_COV", "
                      by='entity_id', all.x = TRUE)
 
 #Create province variable
-df_all_clsa$province<-province_fun(df_all_clsa$FSA_COVID)
+df_all_clsa$province_anti<-province_fun(df_all_clsa$FSA_COVID)
 
 #Create age variable
 df_all_clsa$age_groups <- age_groups_fun(df_all_clsa$SER_AGE_COV)
@@ -800,17 +804,31 @@ df_all_clsa<-df_all_clsa %>%
 
 #exclude participants with missing samples
 df_all_clsa <- df_all_clsa[df_all_clsa$SER_NUCLEOCAPSID_COV >= 0 |
-                             df_all_clsa$SER_SPIKE_COV >= 0,]
+                             df_all_clsa$SER_SPIKE_COV >= 0,] #17311
 
 #classify interview start date (proxy for sampledate)
 df_all_clsa$sampledate<-as.Date(df_all_clsa$start_datetime_COV,tz = "UTC")
 df_all_clsa$month<-floor_date(df_all_clsa$sampledate,
                               unit = "2 months")
+
+#Join demographic data from full CLSA cohort FUP2 to get missing province
+# data for antibody participants who did not participate in questionnaire study (df_clsa_cb)
+df_clsa_fup2<-read.csv("1_data/private/CLSA/2209005_McGill_ARussell_FUP2_Trav1_Qx_FSA_CSD.csv") %>% 
+  mutate(province_full_fup2 = province_fun(SDC_FSA_TRF2))
+
+df_all_clsa<-merge(df_all_clsa,df_clsa_fup2[,c("entity_id","province_full_fup2")],
+                   by = "entity_id",all.x = T)
+
+#Impute missing province in antibody data with province data from full cohort
+df_all_clsa$province_anti<-ifelse(is.na(df_all_clsa$province_anti),df_all_clsa$province_full_fup2,
+                                  df_all_clsa$province_anti)
+
 #generate final df
 clsa_df<-df_all_clsa %>% 
-  select(entity_id,age_groups,sex,province,urban,race,month,
+  select(entity_id,age_groups,sex,province_anti,urban,race,month,
          sampledate,SER_AGE_COV,race1) %>% 
-  filter(!is.na(province))#n = 13124
+  filter(!is.na(province_anti))#n = 15186
+colnames(clsa_df)[4]<-"province"
 
 #Generate counts by age-sex-urban strata
 clsa_asu<-clsa_df %>% 
@@ -868,7 +886,7 @@ clsa_allr1<-clsa_df  %>%
   ungroup()
 clsa_asr1<-rbind(clsa_asr1,clsa_allr1)
 
-#write to csv
+#save to .csv
 #write_csv(clsa_asu,"./1_data/private/clsa_asu_final.csv")
 #write_csv(clsa_asr,"./1_data/private/clsa_asr_final.csv")
 #write_csv(clsa_df,"./1_data/private/clsa_df_final.csv")
@@ -1347,3 +1365,136 @@ census_eqs<-census[[4]] %>%
             FUN = sum,
             drop = F)
 #write_csv(census_eqs,"./1_data/private/2016 Canadian Census/censussqs_e_apl.csv")
+
+#Sensitivity analysis #2: calculate Canpath and CLSA rep_ratios using
+# census datasets which include indigenous counts
+#Age-sex-urban
+#Setting D: 9 provinces (no Saskatchewan), 18+ (Canpath)
+census_ds2<-census[[1]] %>% 
+  filter(province != "SK" & 
+           province != "NU" & province != "NT" & province != "YT" &
+           age_groups != "0-17 years") %>% 
+  aggregate(count_census ~ age_groups + sex + urban,
+            FUN = sum,
+            drop = F)
+census_ds2_all<-census_ds2 %>%  
+  aggregate(count_census ~ sex + urban,
+            FUN = sum,
+            drop = F)
+census_ds2_all$age_groups<-"All ages"
+
+census_ds2_alls<-census_ds2 %>% 
+  aggregate(count_census ~ sex,
+            FUN = sum,
+            drop = F) %>% 
+  mutate(age_groups = "All ages",
+         urban = "All regions")
+census_ds2<-do.call("rbind",list(census_ds2,census_ds2_all,census_ds2_alls))
+#write_csv(census_ds2,"./1_data/private/2016 Canadian Census/censusasu_d_canpath_s2.csv")
+
+#Setting G: 10 provinces, 47+ (CLSA)
+census_gs2<-census[[1]] %>%
+  filter(age_groups == "47-56 years" | 
+           age_groups == "57+ years" & 
+           province != "NU" & province != "NT" & province != "YT") %>% 
+  aggregate(count_census ~ age_groups + sex + urban,
+            FUN = sum,
+            drop = F)
+census_gs2_all<-census_gs2 %>%  
+  aggregate(count_census ~ sex + urban,
+            FUN = sum,
+            drop = F)
+census_gs2_all$age_groups<-"All ages"
+
+census_gs2_alls<-census_gs2 %>% 
+  aggregate(count_census ~ sex,
+            FUN = sum,
+            drop = F) %>% 
+  mutate(age_groups = "All ages",
+         urban = "All regions")
+census_gs2<-do.call("rbind",list(census_gs2,census_gs2_all,census_gs2_alls))
+#write_csv(census_gs2,"./1_data/private/2016 Canadian Census/censusasu_g_clsa_s2.csv")
+
+#Age-sex-race
+#Setting D: 9 provinces (no Saskatchewan), 18+ (Canpath)
+census_drs2<-census[[2]] %>% 
+  filter(province != "SK" & 
+           province != "NU" & province != "NT" & province != "YT" &
+           age_groups != "0-17 years") %>% 
+  aggregate(count_census ~ age_groups + sex + race,
+            FUN = sum,
+            drop = F)
+census_drs2_all<-census_drs2 %>%  
+  aggregate(count_census ~ sex + race,
+            FUN = sum,
+            drop = F)
+census_drs2_all$age_groups<-"All ages"
+census_drs2<-rbind(census_drs2,census_drs2_all)
+#write_csv(census_drs2,"./1_data/private/2016 Canadian Census/censusasr_d_canpath_s2.csv")
+
+#Setting G: 10 provinces, 47+ (CLSA)
+census_grs2<-census[[2]] %>%
+  filter(age_groups == "47-56 years" | 
+           age_groups == "57+ years" & 
+           province != "NU" & province != "NT" & province != "YT") %>% 
+  aggregate(count_census ~ age_groups + sex + race,
+            FUN = sum,
+            drop = F)
+census_grs2_all<-census_grs2 %>%  
+  aggregate(count_census ~ sex + race,
+            FUN = sum,
+            drop = F)
+census_grs2_all$age_groups<-"All ages"
+census_grs2<-rbind(census_grs2,census_grs2_all)
+#write_csv(census_grs2,"./1_data/private/2016 Canadian Census/censusasr_g_clsa_s2.csv")
+
+# Create summary table for supplement -------------------------------------
+#Clean variables - need consistent levels (turn all NAs into "missing")
+cbs_dfs<-read.csv("1_data/private/cbs_df_final.csv") %>% 
+  mutate(cohort = "CBS blood donor")
+#Replace NAs with "Missing"
+cbs_dfs[,c("urban","quintmat","quintsoc")]<-lapply(cbs_dfs[,c("urban","quintmat","quintsoc")],sup_fun)
+
+apl_dfs<-read.csv("1_data/private/apl_df_final.csv") %>% 
+  mutate(cohort = "APL outpatient laboratory",
+         sex = ifelse(sex == "Unknown","Missing",sex),
+         race = "Missing") #Added only for visualization
+apl_dfs[,c("urban","quintmat","quintsoc")]<-lapply(apl_dfs[,c("urban","quintmat","quintsoc")],sup_fun)
+
+abc_dfs<-read.csv("1_data/private/abc_df_final.csv") %>% 
+  mutate(cohort = "Ab-c open cohort",
+         quintmat = "Missing",
+         quintsoc = "Missing") #Added only for visualization
+abc_dfs[,"race"]<-sup_fun(abc_dfs[,"race"])
+
+clsa_dfs<-read.csv("1_data/private/clsa_df_final.csv") %>% 
+  mutate(cohort = "CLSA closed cohort",
+         quintmat = "Missing",
+         quintsoc = "Missing")
+clsa_dfs[,"race"]<-sup_fun(clsa_dfs[,"race"])
+
+can_dfs<-read.csv("1_data/private/can_df_final.csv") %>% 
+  mutate(cohort = "Canpath closed cohort",
+         quintmat = "Missing",
+         quintsoc = "Missing")
+can_dfs[,"race"]<-sup_fun(can_dfs[,"race"])
+
+all_dfs<-do.call("rbind",list(cbs_dfs[,c("age_groups","sex","urban","race","quintmat","quintsoc","cohort")],
+                              apl_dfs[,c("age_groups","sex","urban","race","quintmat","quintsoc","cohort")],
+                              abc_dfs[,c("age_groups","sex","urban","race","quintmat","quintsoc","cohort")],
+                              clsa_dfs[,c("age_groups","sex","urban","race","quintmat","quintsoc","cohort")],
+                              can_dfs[,c("age_groups","sex","urban","race","quintmat","quintsoc","cohort")]))
+
+#Change categorical vars into factors and assign levels for ordering
+all_dfs<-all_dfs %>% 
+  mutate(sex = factor(sex,levels = c("Female","Male","Missing")),
+         race = factor(race,levels = c("Racialized minority","White","Missing")),
+         urban = factor(urban,levels = c("Rural","Urban","Missing")),
+         cohort = factor(cohort,levels = c("CBS blood donor","APL outpatient laboratory",
+                                           "Ab-c open cohort","Canpath closed cohort",
+                                           "CLSA closed cohort")))
+#Add library(tableone) to top and modify below code
+st<-CreateTableOne(data = all_dfs,vars = c("age_groups","quintmat",
+                                  "quintsoc","race","sex","urban"),
+               strata = "cohort",test = F,smd = F)
+#write.csv(print(st,quote = T,noSpaces = T),"4_output/summary_supplemental_table.csv")

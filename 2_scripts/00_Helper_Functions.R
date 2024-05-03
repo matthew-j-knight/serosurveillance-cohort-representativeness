@@ -168,3 +168,9 @@ rr_binned_fun<-function(x){#input rep ratio column
     TRUE ~ NA
   )
 }
+
+#Change value "NA" to "Missing" for supplemental table
+sup_fun<-function(x){
+  x<-ifelse(is.na(x) | x == "pnts","Missing",x)
+  return(x)
+}

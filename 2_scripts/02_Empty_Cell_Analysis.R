@@ -14,6 +14,7 @@ clsa_df<-read.csv("./1_data/private/clsa_df_final.csv")
 can_df<-read.csv("./1_data/private/can_df_final.csv")
 can_df1<-read.csv("./1_data/private/can_df1_final.csv")
 ccahs1_out<-read_xlsx("./1_data/private/2016 Canadian Census/10285/Sortie_CCAHS_Census_ratio/df_emptycell.xlsx")
+ccahs1_outs<-read_xlsx("./1_data/private/2016 Canadian Census/10285/Sortie_CCAHS_Census_ratio/df_emptycell_s.xlsx") #sensitivity analysis 1
 
 #Run analysis ------------------------
 #Age-sex-province-month datasets
@@ -67,7 +68,7 @@ clsa_countasu<-round((nrow(clsa_asu %>% filter (count > 25)))/nrow(clsa_asu),2) 
 can_countasu<-round((nrow(can_asu %>% filter (count > 25)))/nrow(can_asu),2) * 100
 
 #Age-sex-race-province-month datasets
-cbs_asr<-cbs_df %>% filter(race != "Missing") %>% 
+cbs_asr<-cbs_df %>% 
   group_by(age_groups,sex,province,race,month) %>%
   summarize(count = n()) %>% ungroup()
 abc_asr<-abc_df %>% 
@@ -88,8 +89,7 @@ clsa_countasr<-round((nrow(clsa_asr %>% filter (count > 25))) / nrow(clsa_asr),2
 can_countasr<-round((nrow(can_asr %>% filter (count > 25))) / nrow(can_asr),2) * 100
 
 #Age-sex-urban-province-race-month datasets
-cbs_asur<-cbs_df %>% filter(!is.na(urban) &
-                              race != "Missing") %>% 
+cbs_asur<-cbs_df %>% filter(!is.na(urban)) %>% 
   group_by(age_groups,sex,province,urban,race,month) %>%
   summarize(count = n()) %>% ungroup()
 abc_asur<-abc_df %>% 
@@ -112,11 +112,11 @@ clsa_countasur<-round((nrow(clsa_asur %>% filter (count > 25)))/nrow(clsa_asur),
 can_countasur<-round((nrow(can_asur %>% filter (count > 25)))/nrow(can_asur),2) * 100
 
 #Collect into a data.frame
-df<-data.frame(Cohort = c("CBS blood donor (1035580)",
-                          "APL outpatient laboratory (208110)",
-                          "Ab-c open cohort (25110)",
-                          "CLSA closed cohort (13124)",
-                          "Canpath closed cohort (21720)"),
+df<-data.frame(Cohort = c("CBS blood donor (1,035,580)",
+                          "APL outpatient laboratory (208,110)",
+                          "Ab-C open cohort (25,110)",
+                          "CLSA closed cohort (15,186)",
+                          "CANPATH closed cohort (21,720)"),
                Month_S = c(length(unique(floor_date(as.Date(cbs_df$sampledate),"1 month"))),
                            length(unique(floor_date(as.Date(apl_df$sampledate),"1 month"))),
                            length(unique(floor_date(as.Date(abc_df[!is.na(abc_df$sampledate),]$sampledate),"1 month"))),
@@ -131,16 +131,17 @@ df<-data.frame(Cohort = c("CBS blood donor (1035580)",
                Age_Sex_Race_Urban_Prov = c(cbs_countasur,NA,abc_countasur,
                                            clsa_countasur,can_countasur))
 #Clean CCAHS-1 run and add to df
-ccahs1_out$Cohort<-"CCAHS-1 closed cohort (XX)"
+ccahs1_out$Cohort<-"CCAHS-1 closed cohort (11,050)"
 ccahs1_out[,4:7]<-lapply(ccahs1_out[,4:7], function(x){
   x<-round(as.numeric(x,2))
   return(x)})
-ccahs1_out$Month_S<-6
+#Convert number of 2-month sampling periods to number of months sampled
+ccahs1_out$Month_S<-ccahs1_out$Month_S * 2
 df<-rbind(df,ccahs1_out[,2:7])
 df<-df[c(1:3,5,4,6),] #order by specimen count
 colnames(df)[1]<-"Study (specimen count)"
 
-write_csv(df,"./4_output/table_2_analysisfinal.csv")
+#write_csv(df,"./4_output/table_2_analysisfinal.csv")
 
 # Sensitivity analysis 1: classify mixed race as "White" ------------------
 #Age-sex-race-province-month datasets
@@ -180,11 +181,11 @@ clsa_countasur1<-round((nrow(clsa_asur1 %>% filter (count > 25)))/nrow(clsa_asur
 can_countasur1<-round((nrow(can_asur1 %>% filter (count > 25)))/nrow(can_asur1),2) * 100
 
 #Collect into a data.frame
-df1<-data.frame(Cohort = c("CBS blood donor (1035580)",
-                           "APL outpatient laboratory (208110)",
-                           "Ab-c open cohort (25110)",
-                           "CLSA closed cohort (13124)",
-                           "Canpath closed cohort (21720)"),
+df1<-data.frame(Cohort = c("CBS blood donor (1,035,580)",
+                           "APL outpatient laboratory (208,110)",
+                           "Ab-C open cohort (25,110)",
+                           "CLSA closed cohort (15,186)",
+                           "CANPATH closed cohort (21,720)"),
                 Month_S = c(length(unique(floor_date(as.Date(cbs_df$sampledate),"1 month"))),
                             length(unique(floor_date(as.Date(apl_df$sampledate),"1 month"))),
                             length(unique(floor_date(as.Date(abc_df[!is.na(abc_df$sampledate),]$sampledate),"1 month"))),
@@ -199,8 +200,19 @@ df1<-data.frame(Cohort = c("CBS blood donor (1035580)",
                Age_Sex_Race_Urban_Prov = c(cbs_countasur,NA,abc_countasur1,
                                            clsa_countasur1,can_countasur1))
 
-#XXXX: Read in CCAHS-1 sensitivity analysis
-
-df1<-df1[c(1:3,5,4),] #order by specimen count
+#Clean CCAHS-1 sensitivity analysis and add to df
+ccahs1_outs$Cohort<-"CCAHS-1 closed cohort (11,050)"
+ccahs1_outs[,4:5]<-lapply(ccahs1_outs[,4:5], function(x){
+  x<-round(as.numeric(x,2))
+  return(x)})
+#Add columns from CCAHS-1 run above which remain unchanged by sensitivity analysis
+ccahs1_outs<-ccahs1_outs %>% 
+  mutate(Age_Sex_Prov = ccahs1_out$Age_Sex_Prov,
+         Age_Sex_Urban_Prov = ccahs1_out$Age_Sex_Urban_Prov,
+         Month_S = ccahs1_out$Month_S) %>% 
+  select(Cohort,Month_S,Age_Sex_Prov,Age_Sex_Urban_Prov,Age_Sex_Race_Prov,
+         Age_Sex_Race_Urban_Prov)
+df1<-rbind(df1,ccahs1_outs)
+df1<-df1[c(1:3,5,4,6),] #order by specimen count
 colnames(df1)[1]<-"Study (specimen count)"
-write_csv(df1,"./4_output/table_2_analysisfinal1.csv")
+#write_csv(df1,"./4_output/table_2_analysisfinal1.csv")
