@@ -43,9 +43,9 @@ df_clsa_cb<-read.csv("./1_data/private/CLSA/2209005_McGill_ARussell_Covid_Combin
 df_clsa_anti<-read.csv("./1_data/private/CLSA/2209005_McGill_ARussell_Covid_Antibody_Combined_NoIndigenousIdentifiers_v1.csv")
 
 #Canpath dataset import
-canpath_data<-read.csv("./1_data/private/CANPATH/DAO-543759_ResearcherDataset_Qx_96014par_1125var.csv")
-canpath_seradmin<-read.csv("./1_data/private/CANPATH/DAO-543759_ResearcherDataset_Serology_Admin_25727par.csv")
-canpath_serres<-read.csv("./1_data/private/CANPATH/DAO-543759_ResearcherDataset_Serology_Results_74503par.csv")
+canpath_data<-read.csv("./1_data/private/CanPath/DAO-543759_ResearcherDataset_Qx_96014par_1125var.csv")
+canpath_seradmin<-read.csv("./1_data/private/CanPath/DAO-543759_ResearcherDataset_Serology_Admin_25727par.csv")
+canpath_serres<-read.csv("./1_data/private/CanPath/DAO-543759_ResearcherDataset_Serology_Results_74503par.csv")
 
 #Census dataset import - provinces & territories
 casup<-read_xlsx("./1_data/private/2016 Canadian Census/10285/Sortie_Census/censasup.xlsx")
@@ -811,23 +811,78 @@ df_all_clsa$sampledate<-as.Date(df_all_clsa$start_datetime_COV,tz = "UTC")
 df_all_clsa$month<-floor_date(df_all_clsa$sampledate,
                               unit = "2 months")
 
-#Join demographic data from full CLSA cohort FUP2 to get missing province
-# data for antibody participants who did not participate in questionnaire study (df_clsa_cb)
-df_clsa_fup2<-read.csv("1_data/private/CLSA/2209005_McGill_ARussell_FUP2_Trav1_Qx_FSA_CSD.csv") %>% 
-  mutate(province_full_fup2 = province_fun(SDC_FSA_TRF2))
+#Impute missing fsas in antibody dataset with fsas from other measurement periods
+# (baseline, follow up 1, follow up 2)
+missing_fsa_id<-df_all_clsa[is.na(df_all_clsa$FSA_COVID),"entity_id"] #IDs with missing fsa
 
-df_all_clsa<-merge(df_all_clsa,df_clsa_fup2[,c("entity_id","province_full_fup2")],
-                   by = "entity_id",all.x = T)
+#Read in
+#Baseline
+df_clsa_baselinec<-read.csv("1_data/private/CLSA/2209005_McGill_ARussell_Baseline_CoPv7_Qx_CANUE_PA_BS_CSD_FSA.csv") %>% 
+  select(entity_id,SDC_FSA_COM) %>% 
+  mutate(measure_t = "baseline") %>% 
+  filter(!is.na(SDC_FSA_COM)) #comprehensive
+colnames(df_clsa_baselinec)[2]<-"fsa"
+df_clsa_baselinet<-read.csv("1_data/private/CLSA/2209005_McGill_ARussell_Baseline_Trav4_Qx_CANUE_CSD_FSA.csv") %>% 
+  select(entity_id,SDC_FSA_TRM) %>% 
+  mutate(measure_t = "baseline") %>% 
+  filter(!is.na(SDC_FSA_TRM)) #tracking
+colnames(df_clsa_baselinet)[2]<-"fsa"
+#Follow up 1
+df_clsa_fup1c<-read.csv("1_data/private/CLSA/2209005_McGill_ARussell_FUP1_CoPv4_Qx_CANUE_PA_BS_CSD_FSA.csv") %>% 
+  select(entity_id,SDC_FSA_COF1) %>% 
+  mutate(measure_t = "fup1") %>% 
+  filter(!is.na(SDC_FSA_COF1))
+colnames(df_clsa_fup1c)[2]<-"fsa"
+df_clsa_fup1t<-read.csv("1_data/private/CLSA/2209005_McGill_ARussell_FUP1_Trav3_Qx_CANUE_FSA_CSD.csv") %>% 
+  select(entity_id,SDC_FSA_TRF1) %>% 
+  mutate(measure_t = "fup1") %>% 
+  filter(!is.na(SDC_FSA_TRF1))
+colnames(df_clsa_fup1t)[2]<-"fsa"
+#Follow up 2
+df_clsa_fup2c<-read.csv("1_data/private/CLSA/2209005_McGill_ARussell_FUP2_CoPv1_Qx_FSA_CSD.csv") %>% 
+  select(entity_id,SDC_FSA_COF2) %>% 
+  mutate(measure_t = "fup2") %>% 
+  filter(!is.na(SDC_FSA_COF2))
+colnames(df_clsa_fup2c)[2]<-"fsa"
+df_clsa_fup2t<-read.csv("1_data/private/CLSA/2209005_McGill_ARussell_FUP2_Trav1_Qx_FSA_CSD.csv") %>% 
+  select(entity_id,SDC_FSA_TRF2) %>% 
+  mutate(measure_t = "fup2") %>% 
+  filter(!is.na(SDC_FSA_TRF2))
+colnames(df_clsa_fup2t)[2]<-"fsa"
 
-#Impute missing province in antibody data with province data from full cohort
-df_all_clsa$province_anti<-ifelse(is.na(df_all_clsa$province_anti),df_all_clsa$province_full_fup2,
+#Combine into 1 df.Generate province of residence & urban/rural variables
+id_fsa_all<-do.call("rbind",list(df_clsa_baselinec,df_clsa_baselinet,
+                                 df_clsa_fup1c,df_clsa_fup1t,
+                                 df_clsa_fup2c,df_clsa_fup2t))
+
+#For ids with multiple different FSAs, take the most recent FSA
+id_fsa_all<-id_fsa_all %>%  
+  group_by(entity_id) %>% 
+  arrange(desc(measure_t)) %>% 
+  slice(1) %>% #select first row of each entity_id group (most recent)
+  ungroup()
+
+id_fsa_all$urban_impute<-case_when(substr(id_fsa_all$fsa,2,2) == 0 ~ "Rural",
+                                   substr(id_fsa_all$fsa,2,2) %in% 1:9 ~ "Urban",
+                                   TRUE ~ NA)
+id_fsa_all$province_impute<-province_fun(id_fsa_all$fsa)
+id_fsa_all<-id_fsa_all[id_fsa_all$entity_id %in% missing_fsa_id,]
+
+#Merge baseline, follow up 1, follow up 2 datasets with antibody dataset
+df_all_clsa<-merge(df_all_clsa,id_fsa_all[,c("entity_id","province_impute","urban_impute")],
+            by = "entity_id",all.x = T)
+df_all_clsa$province_anti<-ifelse(is.na(df_all_clsa$province_anti),
+                                  df_all_clsa$province_impute,
                                   df_all_clsa$province_anti)
+df_all_clsa$urban<-ifelse(is.na(df_all_clsa$urban),
+                          df_all_clsa$urban_impute,
+                          df_all_clsa$urban)
 
 #generate final df
 clsa_df<-df_all_clsa %>% 
   select(entity_id,age_groups,sex,province_anti,urban,race,month,
          sampledate,SER_AGE_COV,race1) %>% 
-  filter(!is.na(province_anti))#n = 15186
+  filter(!is.na(province_anti) & province_anti != "YT")#n = 17310
 colnames(clsa_df)[4]<-"province"
 
 #Generate counts by age-sex-urban strata
@@ -892,7 +947,7 @@ clsa_asr1<-rbind(clsa_asr1,clsa_allr1)
 #write_csv(clsa_df,"./1_data/private/clsa_df_final.csv")
 #write_csv(clsa_asr1,"./1_data/private/clsa_asr1_final.csv")
 
-# Probabilistic Survey 3 (CANPATH) ------------------------------------------------
+# Probabilistic Survey 3 (CanPath) ------------------------------------------------
 canpath_data<-canpath_data[,c("ResearcherID","C_ADM_STUDY_DATASET","C1_SDC_AGE", "C1_SDC_SEX", "C1_ADM_FSA",
                               "C1_SDC_EB_ARAB","C1_SDC_EB_BLACK","C1_SDC_EB_CHINESE",
                               "C1_SDC_EB_FILIPINO","C1_SDC_EB_JAPANESE",

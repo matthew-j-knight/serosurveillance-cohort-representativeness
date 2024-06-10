@@ -54,7 +54,7 @@ g_asrs2<-read.csv("./1_data/private/2016 Canadian Census/censusasr_g_clsa_s2.csv
 source("2_scripts/00_Helper_Functions.R")
 
 # Bootstrap age-sex-urban representativeness ratios -----------------------
-# Setting A (Ab-c)
+# Setting A (Ab-C)
 n_replicates<-5000 #number of bootstrap iterations
 collect<-NULL
 
@@ -111,7 +111,7 @@ output<-data.frame(output)
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 abc_fin<-cbind(subcount[,c("age_groups","sex","urban")],sapply(output,rrfun))
 colnames(abc_fin)[4]<-"rr_prob"
-abc_fin$cohort<-"Ab-c open cohort"
+abc_fin$cohort<-"Ab-C open cohort"
 
 #calculate summary statistics (quantiles,mean)
 abcsum_output<-matrix(NA,nrow = ncol(output),
@@ -213,7 +213,7 @@ cbssum_output<-cbind(cbssum_output,subcount[,c("age_groups","sex","urban")])
 #write_csv(cbs_fin,"./1_data/private/boot_cbs_asu_5000.csv")
 #write_csv(cbssum_output,"boot_csb_asu_5000_sumstats.csv")
 
-#Setting D (Canpath)
+#Setting D (CanPath)
 n_replicates<-5000 #number of bootstrap iterations
 collect<-NULL
 
@@ -269,7 +269,7 @@ output<-data.frame(output)
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 can_fin<-cbind(subcount[,c("age_groups","sex","urban")],sapply(output,rrfun))
 colnames(can_fin)[4]<-"rr_prob"
-can_fin$cohort<-"Canpath closed cohort"
+can_fin$cohort<-"CanPath closed cohort"
 
 #calculate summary statistics (quantiles,mean)
 cansum_output<-matrix(NA,nrow = ncol(output),
@@ -451,7 +451,7 @@ clsasum_output<-cbind(clsasum_output,subcount[,c("age_groups","sex","urban")])
 
 # Bootstrap age-sex-race representativeness ratios ------------------------
 
-#Setting A (Ab-c)
+#Setting A (Ab-C)
 n_replicates<-5000 #number of bootstrap iterations
 collect<-NULL
 
@@ -500,7 +500,7 @@ output<-data.frame(output)
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 abcr_fin<-cbind(subcount[,c("age_groups","sex","race")],sapply(output,rrfun))
 colnames(abcr_fin)[4]<-"rr_prob"
-abcr_fin$cohort<-"Ab-c open cohort"
+abcr_fin$cohort<-"Ab-C open cohort"
 
 #calculate summary statistics (quantiles,mean)
 abcrsum_output<-matrix(NA,nrow = ncol(output),
@@ -594,7 +594,7 @@ cbsrsum_output<-cbind(cbsrsum_output,subcount[,c("age_groups","sex","race")])
 #write_csv(cbsr_fin,"./1_data/private/boot_cbs_asr_5000.csv")
 #write_csv(cbsrsum_output,"boot_cbs_asr_5000_sumstats.csv")
 
-#Setting D (Canpath)
+#Setting D (CanPath)
 n_replicates<-5000 #number of bootstrap iterations
 collect<-NULL
 
@@ -642,7 +642,7 @@ output<-data.frame(output)
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 canr_fin<-cbind(subcount[,c("age_groups","sex","race")],sapply(output,rrfun))
 colnames(canr_fin)[4]<-"rr_prob"
-canr_fin$cohort<-"Canpath closed cohort"
+canr_fin$cohort<-"CanPath closed cohort"
 
 #calculate summary statistics (quantiles,mean)
 canrsum_output<-matrix(NA,nrow = ncol(output),
@@ -732,8 +732,8 @@ for(i in 1:ncol(output)){
 clsarsum_output<-data.frame(clsarsum_output)
 colnames(clsarsum_output)<-c("mean","2.5","25","50","75","95")
 clsarsum_output<-cbind(clsarsum_output,subcount[,c("age_groups","sex","race")])
-#write_csv(clsar_fin,"./1_data/private/boot_clsa_asr_5000.csv")
-#write_csv(clsarsum_output,"boot_clsa_asr_5000_sumstats.csv")
+write_csv(clsar_fin,"./1_data/private/boot_clsa_asr_5000.csv")
+write_csv(clsarsum_output,"boot_clsa_asr_5000_sumstats.csv")
 
 # Bootstrap sex-quintmat representation ratios ----------------------------
 
@@ -1007,7 +1007,7 @@ aplqssum_output<-cbind(aplqssum_output,subcount[,c("sex","quintsoc")])
 # Bootstrap age-sex representation ratios (territories) -------------------
 #Setting F (CCAHS territories)
 '
-#Setting H (Ab-c territories)
+#Setting H (Ab-C territories)
 n_replicates<-5000 #number of bootstrap iterations
 collect<-NULL
 
@@ -1049,7 +1049,7 @@ output<-data.frame(output)
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 abct_fin<-cbind(subcount[,c("age_groups","sex")],sapply(output,rrfun))
 colnames(abct_fin)[3]<-"rr_prob"
-abct_fin$cohort<-"Ab-c open cohort"
+abct_fin$cohort<-"Ab-C open cohort"
 
 #calculate summary statistics (quantiles,mean)
 abctsum_output<-matrix(NA,nrow = ncol(output),
@@ -1073,7 +1073,7 @@ abctsum_output<-cbind(abctsum_output,subcount[,c("age_groups","sex")])
 
 # Sensitivity analysis 1: classify mixed race as "White" ------------------
 #Bootstrap age-sex-race representation ratios
-#Setting A (Ab-c)
+#Setting A (Ab-C)
 n_replicates<-5000 #number of bootstrap iterations
 collect<-NULL
 
@@ -1121,7 +1121,7 @@ output<-data.frame(output)
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 abcr1_fin<-cbind(subcount[,c("age_groups","sex","race1")],sapply(output,rrfun))
 colnames(abcr1_fin)[4]<-"rr_prob"
-abcr1_fin$cohort<-"Ab-c open cohort"
+abcr1_fin$cohort<-"Ab-C open cohort"
 
 #calculate summary statistics (quantiles,mean)
 abcr1sum_output<-matrix(NA,nrow = ncol(output),
@@ -1143,7 +1143,7 @@ abcr1sum_output<-cbind(abcr1sum_output,subcount[,c("age_groups","sex","race1")])
 #write_csv(abcr1_fin,"./1_data/private/boot_abc_asr1_5000.csv")
 #write_csv(abcr1sum_output,"boot_abc_asr1_5000_sumstats.csv")
 
-#Setting D (Canpath)
+#Setting D (CanPath)
 n_replicates<-5000 #number of bootstrap iterations
 collect<-NULL
 
@@ -1190,7 +1190,7 @@ output<-data.frame(output)
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 canr1_fin<-cbind(subcount[,c("age_groups","sex","race1")],sapply(output,rrfun))
 colnames(canr1_fin)[4]<-"rr_prob"
-canr1_fin$cohort<-"Canpath closed cohort"
+canr1_fin$cohort<-"CanPath closed cohort"
 
 #calculate summary statistics (quantiles,mean)
 canr1sum_output<-matrix(NA,nrow = ncol(output),
@@ -1283,10 +1283,10 @@ clsar1sum_output<-cbind(clsar1sum_output,subcount[,c("age_groups","sex","race1")
 
 
 # Sensitivity analysis #2: --------
-#Calculate CLSA and Canpath rep ratios using census datasets that include 
+#Calculate CLSA and CanPath rep ratios using census datasets that include 
 # indigenous individuals in census counts
 #Age-sex-urban
-#Setting D (Canpath)
+#Setting D (CanPath)
 n_replicates<-5000 #number of bootstrap iterations
 collect<-NULL
 
@@ -1342,7 +1342,7 @@ output<-data.frame(output)
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 can_fins2<-cbind(subcount[,c("age_groups","sex","urban")],sapply(output,rrfun))
 colnames(can_fins2)[4]<-"rr_prob"
-can_fins2$cohort<-"Canpath closed cohort"
+can_fins2$cohort<-"CanPath closed cohort"
 
 #calculate summary statistics (quantiles,mean)
 cansums2_output<-matrix(NA,nrow = ncol(output),
@@ -1438,11 +1438,11 @@ clsasums2_output<-data.frame(clsasums2_output)
 colnames(clsasums2_output)<-c("mean","2.5","25","50","75","95")
 clsasums2_output<-cbind(clsasums2_output,subcount[,c("age_groups","sex","urban")])
 
-#write_csv(clsa_fins2,"./1_data/private/boot_clsa_asu_5000_s2.csv")
-#write_csv(clsasums2_output,"boot_clsa_asu_5000_sumstats_s2.csv")
+write_csv(clsa_fins2,"./1_data/private/boot_clsa_asu_5000_s2.csv")
+write_csv(clsasums2_output,"boot_clsa_asu_5000_sumstats_s2.csv")
 
 #Age-sex-race
-#Setting D (Canpath)
+#Setting D (CanPath)
 n_replicates<-5000 #number of bootstrap iterations
 collect<-NULL
 
@@ -1490,7 +1490,7 @@ output<-data.frame(output)
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 canrs2_fin<-cbind(subcount[,c("age_groups","sex","race")],sapply(output,rrfun))
 colnames(canrs2_fin)[4]<-"rr_prob"
-canrs2_fin$cohort<-"Canpath closed cohort"
+canrs2_fin$cohort<-"CanPath closed cohort"
 
 #calculate summary statistics (quantiles,mean)
 canrsums2_output<-matrix(NA,nrow = ncol(output),

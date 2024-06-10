@@ -23,7 +23,7 @@ apl_asu1<-read.csv("./1_data/private/apl_asu_final.csv")
 apl_sqm1<-read.csv("./1_data/private/apl_sqm_final.csv")
 apl_sqs1<-read.csv("./1_data/private/apl_sqs_final.csv")
 
-#Ab-c
+#Ab-C
 abc_asu1<-read.csv("./1_data/private/abc_asu_final.csv")
 abc_asr1<-read.csv("./1_data/private/abc_asr_final.csv")
 abc_asr2<-read.csv("./1_data/private/abc_asr1_final.csv")
@@ -33,7 +33,7 @@ clsa_asu1<-read.csv("./1_data/private/clsa_asu_final.csv")
 clsa_asr1<-read.csv("./1_data/private/clsa_asr_final.csv")
 clsa_asr2<-read.csv("./1_data/private/clsa_asr1_final.csv")
 
-#Canpath
+#CanPath
 can_asu1<-read.csv("./1_data/private/can_asu_final.csv")
 can_asr1<-read.csv("./1_data/private/can_asr_final.csv")
 can_asr2<-read.csv("./1_data/private/can_asr1_final.csv")
@@ -57,14 +57,14 @@ ccapopr_count1<-read_xlsx("1_data/private/2016 Canadian Census/10285/Sortie_CCAH
 colnames(ccapopr_count1)[5]<-"rep_ratio"
 
 #Census datasets
-a_asu<-read.csv("./1_data/private/2016 Canadian Census/censusasu_a_abc.csv") #ab-c
+a_asu<-read.csv("./1_data/private/2016 Canadian Census/censusasu_a_abc.csv") #Ab-C
 c_asu<-read.csv("./1_data/private/2016 Canadian Census/censusasu_c_cbs.csv") #cbs
 d_asu<-read.csv("./1_data/private/2016 Canadian Census/censusasu_d_canpath.csv") #canpath
 e_asu<-read.csv("./1_data/private/2016 Canadian Census/censusasu_e_apl.csv") #apl
 g_asu<-read.csv("./1_data/private/2016 Canadian Census/censusasu_g_clsa.csv") #clsa
 
 #Read in 2016 census datasets (race)
-a_asr<-read.csv("./1_data/private/2016 Canadian Census/censusasr_a_abc.csv") #ab-c
+a_asr<-read.csv("./1_data/private/2016 Canadian Census/censusasr_a_abc.csv") #Ab-C
 c_asr<-read.csv("./1_data/private/2016 Canadian Census/censusasr_c_cbs.csv") #cbs
 d_asr<-read.csv("./1_data/private/2016 Canadian Census/censusasr_d_canpath.csv") #canpath
 g_asr<-read.csv("./1_data/private/2016 Canadian Census/censusasr_g_clsa.csv") #clsa
@@ -152,9 +152,9 @@ can_dtasu$pct<-c(can_dtasu$count / sum(can_dtasu$count[1:24],na.rm = T))
 #Plot all datasets in single plot
 cbs_dtasu$cohort<-"CBS blood donor"
 apl_dtasu$cohort<-"APL outpatient laboratory"
-abc_dtasu$cohort<-"Ab-c open cohort"
+abc_dtasu$cohort<-"Ab-C open cohort"
 clsa_dtasu$cohort<-"CLSA closed cohort"
-can_dtasu$cohort<-"Canpath closed cohort"
+can_dtasu$cohort<-"CanPath closed cohort"
 all_dtasu<-do.call("rbind",list(cbs_dtasu,apl_dtasu,abc_dtasu,clsa_dtasu,can_dtasu))
 
 #create count binned for visualization
@@ -179,8 +179,8 @@ all_dtasu<-all_dtasu %>%
   mutate(cohort = case_when(
   cohort == "CBS blood donor" ~ "CBS blood\ndonor",
   cohort == "APL outpatient laboratory" ~ "APL outpatient\nlaboratory",
-  cohort == "Ab-c open cohort" ~ "Ab-c open\ncohort",
-  cohort == "Canpath closed cohort" ~ "Canpath closed\ncohort",
+  cohort == "Ab-C open cohort" ~ "Ab-C open\ncohort",
+  cohort == "CanPath closed cohort" ~ "CanPath closed\ncohort",
   cohort == "CLSA closed cohort" ~ "CLSA closed\ncohort",
   cohort == "CCAHS-1 closed cohort" ~ "CCAHS-1 closed\ncohort",
   TRUE ~ NA))
@@ -204,7 +204,7 @@ all_dtasu$pct_binned<-factor(case_when(
 all_dtasu$cohort<-factor(all_dtasu$cohort,
                          levels = c(
                            "CBS blood\ndonor","APL outpatient\nlaboratory",
-                           "Ab-c open\ncohort","Canpath closed\ncohort",
+                           "Ab-C open\ncohort","CanPath closed\ncohort",
                            "CLSA closed\ncohort"))
 
 blues <- rev(c("#4D8DC4", "#65A1D5", "#82B4E4", "#A2C8F1", "#C3DBFD", "#E1EEFF", "#F9F9F9"))
@@ -285,14 +285,14 @@ aplpop_count$pct_pop<-c(aplpop_count$count_census / sum(aplpop_count$count_censu
 #Calculate representation ratio -- value = 1 indicates apl sample adequately represents the corresponding population subgroup
 aplpop_count$rep_ratio<-aplpop_count$pct_apl / aplpop_count$pct_pop
 
-#---Ab-c representation ratio---
+#---Ab-C representation ratio---
 abcpop_count<-merge(abc_dtasu,a_asu,by = c("age_groups","sex","urban"),all.x = T)
 colnames(abcpop_count)[5]<-"pct_abc" #percentage of total abc samples in each subgroup
 abcpop_count<-abcpop_count[order(abcpop_count$age_groups,abcpop_count$sex,
                                  abcpop_count$urban),]
 abcpop_count$pct_pop<-c(abcpop_count$count_census / sum(abcpop_count$count_census[1:24],na.rm = T))
 
-#Calculate representation ratio -- value = 1 indicates ab-c sample adequately represents the corresponding population subgroup
+#Calculate representation ratio -- value = 1 indicates Ab-C sample adequately represents the corresponding population subgroup
 abcpop_count$rep_ratio<-abcpop_count$pct_abc / abcpop_count$pct_pop
 
 #-- CLSA representation ratio --
@@ -305,22 +305,22 @@ clsapop_count$pct_pop<-c(clsapop_count$count_census / sum(clsapop_count$count_ce
 #Calculate representation ratio -- value = 1 indicates cbs sample adequately represents the corresponding population subgroup
 clsapop_count$rep_ratio<-clsapop_count$pct_clsa / clsapop_count$pct_pop
 
-#-- Canpath representation ratio --
+#-- CanPath representation ratio --
 canpop_count<-merge(can_dtasu,d_asu,by = c("age_groups","sex","urban"),all.x = T)
 colnames(canpop_count)[5]<-"pct_can" #percentage of total can samples in each subgroup
 canpop_count<-canpop_count[order(canpop_count$age_groups,canpop_count$sex,
                                  canpop_count$urban),]
 canpop_count$pct_pop<-c(canpop_count$count_census / sum(canpop_count$count_census[1:24],na.rm = T))
 
-#Calculate representation ratio -- value = 1 indicates Canpath sample adequately represents the corresponding population subgroup
+#Calculate representation ratio -- value = 1 indicates CanPath sample adequately represents the corresponding population subgroup
 canpop_count$rep_ratio<-canpop_count$pct_can / canpop_count$pct_pop
 
 #-- All datasets in 1 plot --
 cbspop_count$cohort<-"CBS blood donor"
 aplpop_count$cohort<-"APL outpatient laboratory"
-abcpop_count$cohort<-"Ab-c open cohort"
+abcpop_count$cohort<-"Ab-C open cohort"
 clsapop_count$cohort<-"CLSA closed cohort"
-canpop_count$cohort<-"Canpath closed cohort"
+canpop_count$cohort<-"CanPath closed cohort"
 ccapop_count<-ccapop_count %>% 
   mutate(cohort = "CCAHS-1 closed cohort")
 
@@ -358,9 +358,9 @@ can_dtasr$pct<-c(can_dtasr$count / sum(can_dtasr$count[1:24],na.rm = T))
 
 #Plot all datasets in single plot
 cbs_dtasr$cohort<-"CBS blood donor"
-abc_dtasr$cohort<-"Ab-c open cohort"
+abc_dtasr$cohort<-"Ab-C open cohort"
 clsa_dtasr$cohort<-"CLSA closed cohort"
-can_dtasr$cohort<-"Canpath closed cohort"
+can_dtasr$cohort<-"CanPath closed cohort"
 all_dtasr<-do.call("rbind",list(cbs_dtasr,abc_dtasr,can_dtasr,clsa_dtasr))
 
 all_dtasr$count_binned<-factor(case_when(
@@ -384,8 +384,8 @@ all_dtasr<-all_dtasr %>%
   mutate(cohort = case_when(
     cohort == "CBS blood donor" ~ "CBS blood\ndonor",
     cohort == "APL outpatient laboratory" ~ "APL outpatient\nlaboratory",
-    cohort == "Ab-c open cohort" ~ "Ab-c open\ncohort",
-    cohort == "Canpath closed cohort" ~ "Canpath closed\ncohort",
+    cohort == "Ab-C open cohort" ~ "Ab-C open\ncohort",
+    cohort == "CanPath closed cohort" ~ "CanPath closed\ncohort",
     cohort == "CLSA closed cohort" ~ "CLSA closed\ncohort",
     cohort == "CCAHS-1 closed cohort" ~ "CCAHS-1 closed\ncohort",
     TRUE ~ NA))
@@ -407,7 +407,7 @@ all_dtasr$pct_binned<-factor(case_when(
 all_dtasr$cohort<-factor(all_dtasr$cohort,
                          levels = c(
                            "CBS blood\ndonor","APL outpatient\nlaboratory",
-                           "Ab-c open\ncohort","Canpath closed\ncohort",
+                           "Ab-C open\ncohort","CanPath closed\ncohort",
                            "CLSA closed\ncohort"))
 
 supp_asr<-ggplot(all_dtasr,aes(x = sex, y = factor(age_groups,
@@ -479,7 +479,7 @@ cbspopr_count$pct_pop<-c(cbspopr_count$count_census/sum(cbspopr_count$count_cens
 #Calculate representation ratio -- value = 1 indicates cbs sample adequately represents the corresponding population subgroup
 cbspopr_count$rep_ratio<-cbspopr_count$pct_cbs / cbspopr_count$pct_pop
 
-# --- Ab-c representation ratio ---
+# --- Ab-C representation ratio ---
 abcpopr_count<-merge(abc_dtasr,a_asr,by = c("age_groups","sex","race"),all.x = T)
 colnames(abcpopr_count)[5]<-"pct_abc"#percentage of total abc samples in each subgroup
 abcpopr_count<-abcpopr_count[order(abcpopr_count$age_groups,abcpopr_count$sex,
@@ -499,14 +499,14 @@ clsapopr_count$pct_pop<-c(clsapopr_count$count_census/sum(clsapopr_count$count_c
 #Calculate representation ratio -- value = 1 indicates clsa sample adequately represents the corresponding population subgroup
 clsapopr_count$rep_ratio<-clsapopr_count$pct_clsa / clsapopr_count$pct_pop
 
-# --- Canpath representation ratio ---
+# --- CanPath representation ratio ---
 canpopr_count<-merge(can_dtasr,d_asr,by = c("age_groups","sex","race"),all.x = T)
 colnames(canpopr_count)[5]<-"pct_can"#percentage of total can samples in each subgroup
 canpopr_count<-canpopr_count[order(canpopr_count$age_groups,canpopr_count$sex,
                                    canpopr_count$race),]
 canpopr_count$pct_pop<-c(canpopr_count$count_census/sum(canpopr_count$count_census[1:24],na.rm = T))
 
-#Calculate representation ratio -- value = 1 indicates Canpath sample adequately represents the corresponding population subgroup
+#Calculate representation ratio -- value = 1 indicates CanPath sample adequately represents the corresponding population subgroup
 canpopr_count$rep_ratio<-canpopr_count$pct_can / canpopr_count$pct_pop
 
 #Add in synthetic APL data for visualization purposes only
@@ -516,9 +516,9 @@ apl_synth<-asr_synth %>%
 
 #Plot datasets in a single plot
 cbspopr_count$cohort<-"CBS blood donor"
-abcpopr_count$cohort<-"Ab-c open cohort"
+abcpopr_count$cohort<-"Ab-C open cohort"
 clsapopr_count$cohort<-"CLSA closed cohort"
-canpopr_count$cohort<-"Canpath closed cohort"
+canpopr_count$cohort<-"CanPath closed cohort"
 ccapopr_count<-ccapopr_count %>% 
   mutate(cohort = "CCAHS-1 closed cohort")
 colnamesr<-c("age_groups","sex","race","rep_ratio","cohort")
@@ -591,8 +591,8 @@ all_dtsqm<-all_dtsqm %>%
   mutate(cohort = case_when(
     cohort == "CBS blood donor" ~ "CBS blood\ndonor",
     cohort == "APL outpatient laboratory" ~ "APL outpatient\nlaboratory",
-    cohort == "Ab-c open cohort" ~ "Ab-c open\ncohort",
-    cohort == "Canpath closed cohort" ~ "Canpath closed\ncohort",
+    cohort == "Ab-C open cohort" ~ "Ab-C open\ncohort",
+    cohort == "CanPath closed cohort" ~ "CanPath closed\ncohort",
     cohort == "CLSA closed cohort" ~ "CLSA closed\ncohort",
     cohort == "CCAHS-1 closed cohort" ~ "CCAHS-1 closed\ncohort",
     TRUE ~ NA))
@@ -600,7 +600,7 @@ all_dtsqm<-all_dtsqm %>%
 all_dtsqm$cohort<-factor(all_dtsqm$cohort,
                          levels = c(
                            "CBS blood\ndonor","APL outpatient\nlaboratory",
-                           "Ab-c open\ncohort","Canpath closed\ncohort",
+                           "Ab-C open\ncohort","CanPath closed\ncohort",
                            "CLSA closed\ncohort"))
 
 supp_qm<-ggplot(all_dtsqm,aes(x = sex, y = factor(quintmat,
@@ -736,8 +736,8 @@ all_dtsqs<-all_dtsqs %>%
   mutate(cohort = case_when(
     cohort == "CBS blood donor" ~ "CBS blood\ndonor",
     cohort == "APL outpatient laboratory" ~ "APL outpatient\nlaboratory",
-    cohort == "Ab-c open cohort" ~ "Ab-c open\ncohort",
-    cohort == "Canpath closed cohort" ~ "Canpath closed\ncohort",
+    cohort == "Ab-C open cohort" ~ "Ab-C open\ncohort",
+    cohort == "CanPath closed cohort" ~ "CanPath closed\ncohort",
     cohort == "CLSA closed cohort" ~ "CLSA closed\ncohort",
     cohort == "CCAHS-1 closed cohort" ~ "CCAHS-1 closed\ncohort",
     TRUE ~ NA))
@@ -745,7 +745,7 @@ all_dtsqs<-all_dtsqs %>%
 all_dtsqs$cohort<-factor(all_dtsqs$cohort,
                          levels = c(
                            "CBS blood\ndonor","APL outpatient\nlaboratory",
-                           "Ab-c open\ncohort","Canpath closed\ncohort",
+                           "Ab-C open\ncohort","CanPath closed\ncohort",
                            "CLSA closed\ncohort"))
 
 supp_sqs<-ggplot(all_dtsqs,aes(x = sex, y = factor(quintsoc,
@@ -869,8 +869,8 @@ f<-f %>% mutate(
   cohort = case_when(
     cohort == "CBS blood donor" ~ "CBS blood\ndonor",
     cohort == "APL outpatient laboratory" ~ "APL outpatient\nlaboratory",
-    cohort == "Ab-c open cohort" ~ "Ab-c open\ncohort",
-    cohort == "Canpath closed cohort" ~ "Canpath closed\ncohort",
+    cohort == "Ab-C open cohort" ~ "Ab-C open\ncohort",
+    cohort == "CanPath closed cohort" ~ "CanPath closed\ncohort",
     cohort == "CLSA closed cohort" ~ "CLSA closed\ncohort",
     cohort == "CCAHS-1 closed cohort" ~ "CCAHS-1 closed\ncohort",
     TRUE ~ NA),
@@ -894,8 +894,8 @@ f<-f %>% mutate(
                                 "Moderately overrepresented (4/3 < RR \u2264 2)",
                                 "Strongly overrepresented (RR > 2)")),
   cohort=factor(cohort, levels = c("CBS blood\ndonor","APL outpatient\nlaboratory",
-                                   "CCAHS-1 closed\ncohort","Ab-c open\ncohort",
-                                   "Canpath closed\ncohort","CLSA closed\ncohort")),
+                                   "CCAHS-1 closed\ncohort","Ab-C open\ncohort",
+                                   "CanPath closed\ncohort","CLSA closed\ncohort")),
   age_groups = factor(age_groups,
                       levels = c("All ages","0-17 years","18-26 years",
                                  "27-36 years","37-46 years","47-56 years",
@@ -1071,6 +1071,58 @@ f2f<-gridExtra::grid.arrange(g1,g2)
 
 #ggsave("4_output/figs/f2.svg",plot = f2f,width=8,height=10,unit="in")
 
+#Alternative figure 2: continuous color scale
+f2_a1<-ggplot(f2,aes(x = sex,y = age_groups,
+                   fill = rep_ratio))+
+  geom_tile(color = "black",show.legend = F,linewidth = 0.1)+
+  geom_text(aes(label = rep_ratio,
+                fontface = ifelse(rr_prob > 0.95,2,1)),
+            color = "black",size = 3.2)+
+  facet_grid(rows = vars(strata),cols = vars(cohort))+
+  labs(fill = "Representativeness\n Ratio (RR)")+
+  scale_fill_gradientn(colours = cols,
+                       values = c(rescale(x = c(0,7/10,1,10/7,3),to = c(0,1))),
+                       n.breaks = 4,
+                       limits = c(0,3),
+                      na.value = "grey80")+
+  scale_y_discrete(labels = c("0-17 years" = "0-17",
+                              "18-26 years" = "18-26","27-36 years" = "27-36",
+                              "37-46 years" = "37-46","47-56 years" = "47-56",
+                              "57+ years" = "Age 57+"))
+
+#Alternative figure 2 quintmat
+f2_qma1<-ggplot(f2_qm,aes(x = sex,y = factor(quintmat,levels = c(1:5)),
+                         fill = rep_ratio))+
+  geom_tile(color = "black",show.legend = F,linewidth = 0.1)+
+  scale_fill_gradientn(colours = cols,
+                       values = c(rescale(x = c(0,7/10,1,10/7,3),to = c(0,1))),
+                       n.breaks = 4,
+                       limits = c(0,3),
+                       na.value = "grey80")+
+  geom_text(aes(label = rep_ratio,
+                fontface = ifelse(rr_prob > 0.95,2,1)),
+            color = "black",size = 3.2)+
+  facet_grid(cols = vars(cohort))+
+  labs(fill = "Representativeness Ratio")+
+  theme(axis.title = element_blank(),
+        plot.margin = margin(0.1,0.1,0.1,0.1))
+
+#Combine alternative plots
+g1<-ggplotGrob(f2_a1)
+g2<-ggplotGrob(f2_qma1)
+w<-g1$heights[1]
+g1$heights[1]<-w * 4 #shrink top graph by increasing size of white space on top
+g2$widths[11]<-3.75*g1$widths[5] #shrink width of mat dep part
+gtable::gtable_show_layout(g1)
+g2$widths[4]<-g2$widths[4] * 4.73 #shift bottom portion to the right while keeping axis label the same
+g2$widths[5]<-g1$widths[5] * 1.05 #widen first panel
+g2$widths[7]<-g1$widths[7] * 1.05 #widen second panel
+g2$widths[9]<-g1$widths[9] * 1.05 #widen third panel
+g2$heights[9]<-g1$heights[7] * 7
+gridExtra::grid.arrange(g1,g2)
+f2a1<-gridExtra::grid.arrange(g1,g2)
+ggsave("4_output/figs/f2_continuous.svg",plot = f2a1,width=8,height=10,unit="in")
+
 # Sensitivity analysis 1: classify mixed race as "White" ------------------
 abc_dtasr1<-merge(asr_synth[,c("age_groups","sex","race1")],abc_asr2,
                   by = c("age_groups","sex","race1"),all.x = TRUE)
@@ -1090,14 +1142,14 @@ abc_dtasr1$pct<-c(abc_dtasr1$count / sum(abc_dtasr1$count[1:24],na.rm = T))
 clsa_dtasr1$pct<-c(clsa_dtasr1$count / sum(clsa_dtasr1$count[1:24],na.rm = T))
 can_dtasr1$pct<-c(can_dtasr1$count / sum(can_dtasr1$count[1:24],na.rm = T))
 
-abc_dtasr1$cohort<-"Ab-c open\ncohort"
+abc_dtasr1$cohort<-"Ab-C open\ncohort"
 clsa_dtasr1$cohort<-"CLSA closed\ncohort"
-can_dtasr1$cohort<-"Canpath closed\ncohort"
+can_dtasr1$cohort<-"CanPath closed\ncohort"
 all_dtasr1<-do.call("rbind",list(abc_dtasr1,clsa_dtasr1,can_dtasr1))
 
 all_dtasr1$cohort<-factor(all_dtasr1$cohort,
-                          levels = c("Ab-c open\ncohort",
-                                     "Canpath closed\ncohort",
+                          levels = c("Ab-C open\ncohort",
+                                     "CanPath closed\ncohort",
                                      "CLSA closed\ncohort"
                           ))
 all_dtasr1$count_binned<-factor(case_when(
@@ -1190,7 +1242,7 @@ ggplot(all_dtasr1,aes(x = sex, y = factor(age_groups,
        x = "Sex")
 
 # -- Heatmap with representation ratio --
-# --- Ab-c representation ratio ---
+# --- Ab-C representation ratio ---
 abcpopr_count1<-merge(abc_dtasr1,a_asr1,by = c("age_groups","sex","race1"),all.x = T)
 colnames(abcpopr_count1)[5]<-"pct_abc" #percentage of total abc samples in each subgroup
 abcpopr_count1<-abcpopr_count1[order(abcpopr_count1$age_groups,abcpopr_count1$sex,
@@ -1199,9 +1251,9 @@ abcpopr_count1$pct_pop<-c(abcpopr_count1$count_census / sum(abcpopr_count1$count
 
 #Calculate representation ratio -- value = 1 indicates ab-c sample adequately represents the corresponding population subgroup
 abcpopr_count1$rep_ratio<-abcpopr_count1$pct_abc / abcpopr_count1$pct_pop
-abcpopr_count1$cohort<-"Ab-c open cohort"
+abcpopr_count1$cohort<-"Ab-C open cohort"
 
-# --- Canpath representation ratio ---
+# --- CanPath representation ratio ---
 canpopr_count1<-merge(can_dtasr1,d_asr1,by = c("age_groups","sex","race1"),all.x = T)
 colnames(canpopr_count1)[5]<-"pct_can" #percentage of total canpath samples in each subgroup
 canpopr_count1<-canpopr_count1[order(canpopr_count1$age_groups,canpopr_count1$sex,
@@ -1210,7 +1262,7 @@ canpopr_count1$pct_pop<-c(canpopr_count1$count_census / sum(canpopr_count1$count
 
 #Calculate representation ratio
 canpopr_count1$rep_ratio<-canpopr_count1$pct_can / canpopr_count1$pct_pop
-canpopr_count1$cohort<-"Canpath closed cohort"
+canpopr_count1$cohort<-"CanPath closed cohort"
 
 # --- CLSA representation ratio ---
 clsapopr_count1<-merge(clsa_dtasr1,g_asr1,by = c("age_groups","sex","race1"),all.x = T)
@@ -1249,8 +1301,8 @@ allpopr_count1<-merge(allpopr_count1,boot_race1,by = c("age_groups","sex","race1
 allpopr_count1<-allpopr_count1 %>% 
   mutate(
     cohort = case_when(
-      cohort == "Ab-c open cohort" ~ "Ab-c open\ncohort",
-      cohort == "Canpath closed cohort" ~ "Canpath closed\ncohort",
+      cohort == "Ab-C open cohort" ~ "Ab-C open\ncohort",
+      cohort == "CanPath closed cohort" ~ "CanPath closed\ncohort",
       cohort == "CLSA closed cohort" ~ "CLSA closed\ncohort",
       cohort == "CCAHS-1 closed cohort" ~ "CCAHS-1 closed\ncohort",
       TRUE ~ NA),
@@ -1270,7 +1322,7 @@ allpopr_count1<-allpopr_count1 %>%
                                   "Moderately overrepresented (4/3 < RR \u2264 2)",
                                   "Strongly overrepresented (RR > 2)")),
     cohort=factor(cohort, levels = c("CCAHS-1 closed\ncohort",
-                                     "Ab-c open\ncohort","Canpath closed\ncohort",
+                                     "Ab-C open\ncohort","CanPath closed\ncohort",
                                      "CLSA closed\ncohort")),
     age_groups = factor(age_groups,
                         levels = c("All ages","0-17 years","18-26 years",
@@ -1349,16 +1401,16 @@ clsapops2_count$pct_pop<-c(clsapops2_count$count_census / sum(clsapops2_count$co
 clsapops2_count$rep_ratio<-clsapops2_count$pct_clsa / clsapops2_count$pct_pop
 clsapops2_count$cohort<-"CLSA closed cohort"
 
-#-- Canpath representation ratio --
+#-- CanPath representation ratio --
 canpops2_count<-merge(can_dtasu,d_asus2,by = c("age_groups","sex","urban"),all.x = T)
 colnames(canpops2_count)[5]<-"pct_can" #percentage of total can samples in each subgroup
 canpops2_count<-canpops2_count[order(canpops2_count$age_groups,canpops2_count$sex,
                                  canpops2_count$urban),]
 canpops2_count$pct_pop<-c(canpops2_count$count_census / sum(canpops2_count$count_census[1:24],na.rm = T))
 
-#Calculate representation ratio -- value = 1 indicates Canpath sample adequately represents the corresponding population subgroup
+#Calculate representation ratio -- value = 1 indicates CanPath sample adequately represents the corresponding population subgroup
 canpops2_count$rep_ratio<-canpops2_count$pct_can / canpops2_count$pct_pop
-canpops2_count$cohort<-"Canpath closed cohort"
+canpops2_count$cohort<-"CanPath closed cohort"
 
 #Merge datasets together and join with bootstrap results
 allpopus2_count<-do.call("rbind",list(clsapops2_count[,colnames],
@@ -1382,16 +1434,16 @@ clsapoprs2_count$pct_pop<-c(clsapoprs2_count$count_census/sum(clsapoprs2_count$c
 clsapoprs2_count$rep_ratio<-clsapoprs2_count$pct_clsa / clsapoprs2_count$pct_pop
 clsapoprs2_count$cohort<-"CLSA closed cohort"
 
-# --- Canpath representation ratio ---
+# --- CanPath representation ratio ---
 canpoprs2_count<-merge(can_dtasr,d_asrs2,by = c("age_groups","sex","race"),all.x = T)
 colnames(canpoprs2_count)[5]<-"pct_can"#percentage of total can samples in each subgroup
 canpoprs2_count<-canpoprs2_count[order(canpoprs2_count$age_groups,canpoprs2_count$sex,
                                    canpoprs2_count$race),]
 canpoprs2_count$pct_pop<-c(canpoprs2_count$count_census/sum(canpoprs2_count$count_census[1:24],na.rm = T))
 
-#Calculate representation ratio -- value = 1 indicates Canpath sample adequately represents the corresponding population subgroup
+#Calculate representation ratio -- value = 1 indicates CanPath sample adequately represents the corresponding population subgroup
 canpoprs2_count$rep_ratio<-canpoprs2_count$pct_can / canpoprs2_count$pct_pop
-canpoprs2_count$cohort<-"Canpath closed cohort"
+canpoprs2_count$cohort<-"CanPath closed cohort"
 
 allpoprs2_count<-do.call("rbind",list(clsapoprs2_count[,colnamesr],
                                     canpoprs2_count[,colnamesr]))
@@ -1412,8 +1464,8 @@ fs2<-fs2 %>% mutate(
   cohort = case_when(
     cohort == "CBS blood donor" ~ "CBS blood\ndonor",
     cohort == "APL outpatient laboratory" ~ "APL outpatient\nlaboratory",
-    cohort == "Ab-c open cohort" ~ "Ab-c open\ncohort",
-    cohort == "Canpath closed cohort" ~ "Canpath closed\ncohort",
+    cohort == "Ab-C open cohort" ~ "Ab-C open\ncohort",
+    cohort == "CanPath closed cohort" ~ "CanPath closed\ncohort",
     cohort == "CLSA closed cohort" ~ "CLSA closed\ncohort",
     cohort == "CCAHS-1 closed cohort" ~ "CCAHS-1 closed\ncohort",
     TRUE ~ NA),
@@ -1438,8 +1490,8 @@ fs2<-fs2 %>% mutate(
                                 "Moderately overrepresented (4/3 < RR \u2264 2)",
                                 "Strongly overrepresented (RR > 2)")),
   cohort=factor(cohort, levels = c("CBS blood\ndonor","APL outpatient\nlaboratory",
-                                   "CCAHS-1 closed\ncohort","Ab-c open\ncohort",
-                                   "Canpath closed\ncohort","CLSA closed\ncohort")),
+                                   "CCAHS-1 closed\ncohort","Ab-C open\ncohort",
+                                   "CanPath closed\ncohort","CLSA closed\ncohort")),
   age_groups = factor(age_groups,
                       levels = c("All ages","0-17 years","18-26 years",
                                  "27-36 years","37-46 years","47-56 years",
