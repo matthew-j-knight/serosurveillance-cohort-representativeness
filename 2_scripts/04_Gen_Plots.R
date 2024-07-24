@@ -31,6 +31,8 @@ abc_asr2<-read.csv("./1_data/private/abc_asr1_final.csv")
 #CLSA
 clsa_asu1<-read.csv("./1_data/private/clsa_asu_final.csv")
 clsa_asr1<-read.csv("./1_data/private/clsa_asr_final.csv")
+clsa_sqm1<-read.csv("./1_data/private/clsa_sqm_final.csv")
+clsa_sqs1<-read.csv("./1_data/private/clsa_sqs_final.csv")
 clsa_asr2<-read.csv("./1_data/private/clsa_asr1_final.csv")
 
 #CanPath
@@ -72,10 +74,12 @@ g_asr<-read.csv("./1_data/private/2016 Canadian Census/censusasr_g_clsa.csv") #c
 #Read in 2016 census datasets (quintmat) 
 c_sqm<-read.csv("./1_data/private/2016 Canadian Census/censussqm_c_cbs.csv") #CBS
 e_sqm<-read.csv("./1_data/private/2016 Canadian Census/censussqm_e_apl.csv") #APL
+g_sqm<-read.csv("./1_data/private/2016 Canadian Census/censussqm_g_clsa.csv") #CLSA
 
 #Read in 2016 census datasets (quintsoc)
 c_sqs<-read.csv("./1_data/private/2016 Canadian Census/censussqs_c_cbs.csv") #CBS
 e_sqs<-read.csv("./1_data/private/2016 Canadian Census/censussqs_e_apl.csv") #APL
+g_sqs<-read.csv("./1_data/private/2016 Canadian Census/censussqs_g_clsa.csv") #CLSA
 
 #Read in 2016 census datasets (sensitivity analysis #1)
 a_asr1<-a_asr %>% 
@@ -90,6 +94,8 @@ d_asus2<-read.csv("./1_data/private/2016 Canadian Census/censusasu_d_canpath_s2.
 g_asus2<-read.csv("./1_data/private/2016 Canadian Census/censusasu_g_clsa_s2.csv") #clsa
 d_asrs2<-read.csv("./1_data/private/2016 Canadian Census/censusasr_d_canpath_s2.csv") #canpath
 g_asrs2<-read.csv("./1_data/private/2016 Canadian Census/censusasr_g_clsa_s2.csv") #clsa
+g_sqms2<-read.csv("./1_data/private/2016 Canadian Census/censussqm_g_clsa_s2.csv") #clsa
+g_sqss2<-read.csv("./1_data/private/2016 Canadian Census/censussqs_g_clsa_s2.csv") #clsa
 
 #Generate synthetic categories for age-sex-urban and 
 # age-sex-race strata - required for visualization
@@ -204,8 +210,8 @@ all_dtasu$pct_binned<-factor(case_when(
 all_dtasu$cohort<-factor(all_dtasu$cohort,
                          levels = c(
                            "CBS blood\ndonor","APL outpatient\nlaboratory",
-                           "Ab-C open\ncohort","CanPath closed\ncohort",
-                           "CLSA closed\ncohort"))
+                           "CLSA closed\ncohort","CanPath closed\ncohort",
+                           "Ab-C open\ncohort"))
 
 blues <- rev(c("#4D8DC4", "#65A1D5", "#82B4E4", "#A2C8F1", "#C3DBFD", "#E1EEFF", "#F9F9F9"))
 supp_asu<-ggplot(all_dtasu[!all_dtasu$urban == "All regions",],aes(x = sex, y = factor(age_groups,
@@ -241,7 +247,7 @@ supp_asu<-ggplot(all_dtasu[!all_dtasu$urban == "All regions",],aes(x = sex, y = 
         axis.text.y = element_text(margin = margin(r = 0.1)))+
   guides(fill = guide_legend(byrow = TRUE))
 supp_asu
-#ggsave("4_output/figs/supp_asu.svg",width=12.5,height=8.5,unit="in")
+ggsave("4_output/figs/supp_asu.svg",width=12.5,height=8.5,unit="in")
 
 ggplot(all_dtasu[!all_dtasu$urban == "All regions",],aes(x = sex, y = factor(age_groups,
                                          levels = c("All ages",
@@ -339,7 +345,8 @@ aplu<-read.csv("./1_data/private/boot_apl_asu_5000.csv")
 clsau<-read.csv("./1_data/private/boot_clsa_asu_5000.csv")
 canu<-read.csv("./1_data/private/boot_can_asu_5000.csv")
 ccau<-read_xlsx("./1_data/private/2016 Canadian Census/10285/Sortie_CCAHS_Census_bootstrap/asu_provinces_5000.xlsx") %>% 
-  mutate(age_groups = ccahs_age(age_groups))
+  mutate(age_groups = ccahs_age(age_groups),
+         rr_prob_rounded = 0) #null value for bootstrap with weighted data
 ccau$cohort<-"CCAHS-1 closed cohort"
 colnames(ccau)[6]<-"rr_prob"
 
@@ -407,8 +414,8 @@ all_dtasr$pct_binned<-factor(case_when(
 all_dtasr$cohort<-factor(all_dtasr$cohort,
                          levels = c(
                            "CBS blood\ndonor","APL outpatient\nlaboratory",
-                           "Ab-C open\ncohort","CanPath closed\ncohort",
-                           "CLSA closed\ncohort"))
+                           "CLSA closed\ncohort","CanPath closed\ncohort",
+                           "Ab-C open\ncohort"))
 
 supp_asr<-ggplot(all_dtasr,aes(x = sex, y = factor(age_groups,
                                          levels = c("All ages",
@@ -445,7 +452,7 @@ supp_asr<-ggplot(all_dtasr,aes(x = sex, y = factor(age_groups,
         axis.text.y = element_text(margin = margin(r = 0.1)))+
   guides(fill = guide_legend(byrow = TRUE))
 supp_asr
-#ggsave("4_output/figs/supp_asr.svg",width=12.5,height=8.5,unit="in")
+ggsave("4_output/figs/supp_asr.svg",width=12.5,height=8.5,unit="in")
 
 ggplot(all_dtasr,aes(x = sex, y = factor(age_groups,
                                          levels = c("All ages",
@@ -535,7 +542,8 @@ abcr<-read.csv("./1_data/private/boot_abc_asr_5000.csv")
 clsar<-read.csv("./1_data/private/boot_clsa_asr_5000.csv")
 canr<-read.csv("./1_data/private/boot_can_asr_5000.csv")
 ccar<-read_xlsx("./1_data/private/2016 Canadian Census/10285/Sortie_CCAHS_Census_bootstrap/asr_provinces_5000.xlsx") %>% 
-  mutate(age_groups = ccahs_age(age_groups))
+  mutate(age_groups = ccahs_age(age_groups),
+         rr_prob_rounded = 0) #null value for bootstrap with weighted data
 ccar$cohort<-"CCAHS-1 closed cohort"
 colnames(ccar)[6]<-"rr_prob"
 boot_race<-do.call("rbind",list(cbsr,abcr,
@@ -549,11 +557,13 @@ allpopr_count<-merge(allpopr_count,boot_race,by = c("age_groups","sex","race","c
 #Calculate proportion each subgroup contributes to total dataset
 cbs_sqm1$pct<-c(cbs_sqm1$count / sum(cbs_sqm1$count))
 apl_sqm1$pct<-c(apl_sqm1$count / sum(apl_sqm1$count))
+clsa_sqm1$pct<-c(clsa_sqm1$count / sum(clsa_sqm1$count))
 
 #Plot all datasets in a single plot
 cbs_sqm1$cohort<-"CBS blood donor"
 apl_sqm1$cohort<-"APL outpatient laboratory"
-all_dtsqm<-do.call("rbind",list(cbs_sqm1,apl_sqm1))
+clsa_sqm1$cohort<-"CLSA closed cohort"
+all_dtsqm<-do.call("rbind",list(cbs_sqm1,apl_sqm1,clsa_sqm1))
 
 #Create count binned for visualization
 all_dtsqm$count_binned<-factor(case_when(
@@ -608,9 +618,9 @@ supp_qm<-ggplot(all_dtsqm,aes(x = sex, y = factor(quintmat,
                                                     4,5)),
                      fill = count_binned))+
   geom_tile(color = "black",show.legend = T,linewidth = 0.1)+
-  scale_fill_discrete(type = blues[c(1,2,4,6,7)])+
+  scale_fill_discrete(type = blues)+
   facet_grid(cols = vars(cohort))+
-  geom_text(aes(label = scales::number(count,big.mark = ",")),color = "black",size = 3.0)+
+  geom_text(aes(label = scales::number(count,big.mark = ",")),color = "black",size = 2.5)+
   labs(fill = "Count",
        y = "Material deprivation quintile",
        x = "Sex")+
@@ -618,6 +628,7 @@ supp_qm<-ggplot(all_dtsqm,aes(x = sex, y = factor(quintmat,
         legend.position = "right",
         legend.margin = margin(rep(0,4)),
         legend.box.margin = margin(rep(0,4)),
+        legend.key.size = unit(0.50,"cm"),
         legend.spacing.x = unit(0.1,"cm"),
         legend.spacing.y = unit(0.3,"cm"),
         plot.margin = unit(rep(0.00,4),"cm"),
@@ -628,7 +639,7 @@ supp_qm<-ggplot(all_dtsqm,aes(x = sex, y = factor(quintmat,
         axis.text.y = element_text(margin = margin(r = 0.8)))+
   guides(fill = guide_legend(byrow = T))
 supp_qm
-#ggsave("4_output/figs/supp_sqm.svg",width=5.0,height=4.0,unit="in")
+ggsave("4_output/figs/supp_sqm.svg",width=5.0,height=4.0,unit="in")
 
 ggplot(all_dtsqm,aes(x = sex, y = factor(quintmat,
                                          levels = c(1,2,
@@ -661,44 +672,59 @@ aplpopqm_count$pct_pop<-c(aplpopqm_count$count_census / sum(aplpopqm_count$count
 #Calculate representation ratio -- value = 1 indicates cbs sample adequately represents the corresponding population subgroup
 aplpopqm_count$rep_ratio<-aplpopqm_count$pct_apl / aplpopqm_count$pct_pop
 
+# --- CLSA representation ratio ---
+clsapopqm_count<-merge(clsa_sqm1,g_sqm,by = c("sex","quintmat"),all.x = T)
+colnames(clsapopqm_count)[4]<-"pct_clsa" #percentage of total CLSA samples in each subgroup
+clsapopqm_count<-clsapopqm_count[order(clsapopqm_count$quintmat,clsapopqm_count$sex),]
+clsapopqm_count$pct_pop<-c(clsapopqm_count$count_census / sum(clsapopqm_count$count_census))
+
+#Calculate representation ratio -- value = 1 indicates clsa sample adequately represents the corresponding population subgroup
+clsapopqm_count$rep_ratio<-clsapopqm_count$pct_clsa / clsapopqm_count$pct_pop
+
 #Plot datasets in a single plot
 cbspopqm_count$cohort<-"CBS blood donor"
 aplpopqm_count$cohort<-"APL outpatient laboratory"
+clsapopqm_count$cohort<-"CLSA closed cohort"
 ccapopqm_count<-ccapopqm_count %>% 
   filter(quintmat != "All quintiles") %>%
   mutate(cohort = "CCAHS-1 closed cohort")
 namesqm<-c("sex","quintmat","cohort","rep_ratio")
 allpopqm_count<-do.call("rbind",list(cbspopqm_count[,namesqm],aplpopqm_count[,namesqm],
-                                     ccapopqm_count[,namesqm]))
+                                     ccapopqm_count[,namesqm],clsapopqm_count[,namesqm]))
 
 # Join in results of bootstrap analysis
 cbsqm<-read.csv("./1_data/private/boot_cbs_sqm_5000.csv")
 aplqm<-read.csv("./1_data/private/boot_apl_sqm_5000.csv")
-ccasqm<-read_xlsx("./1_data/private/2016 Canadian Census/10285/Sortie_CCAHS_Census_bootstrap/sqm_provinces_5000.xlsx")
+clsaqm<-read.csv("./1_data/private/boot_clsa_sqm_5000.csv")
+ccasqm<-read_xlsx("./1_data/private/2016 Canadian Census/10285/Sortie_CCAHS_Census_bootstrap/sqm_provinces_5000.xlsx") %>% 
+  mutate(rr_prob_rounded = 0) #null value for bootstrap with weighted data
 ccasqm<-ccasqm %>% 
   filter(quintmat != "All quintiles") %>%
   mutate(cohort = "CCAHS-1 closed cohort")
 colnames(ccasqm)[5]<-"rr_prob"
-boot_qm<-do.call("rbind",list(cbsqm,aplqm,ccasqm[,2:5]))
+boot_qm<-do.call("rbind",list(cbsqm,aplqm,ccasqm[,2:5],clsaqm))
 
 allpopqm_count<-merge(allpopqm_count,boot_qm,by = c("sex","quintmat","cohort"),all.x = T)
 allpopqm_count$cohort<-case_when(
     allpopqm_count$cohort == "CBS blood donor" ~ "CBS blood\ndonor",
     allpopqm_count$cohort == "APL outpatient laboratory" ~ "APL outpatient\nlaboratory",
-    allpopqm_count$cohort == "CCAHS-1 closed cohort" ~ "CCAHS-1 closed\ncohort")
+    allpopqm_count$cohort == "CCAHS-1 closed cohort" ~ "CCAHS-1 closed\ncohort",
+    allpopqm_count$cohort == "CLSA closed cohort" ~ "CLSA closed\ncohort")
 allpopqm_count$cohort<-factor(allpopqm_count$cohort, 
                              levels = c("CBS blood\ndonor","APL outpatient\nlaboratory",
-                                        "CCAHS-1 closed\ncohort"))
+                                        "CCAHS-1 closed\ncohort","CLSA closed\ncohort"))
 
 #-Set 4: sex-quintsoc-
 #Calculate proportion each subgroup contributes to total dataset
 cbs_sqs1$pct<-c(cbs_sqs1$count / sum(cbs_sqs1$count))
 apl_sqs1$pct<-c(apl_sqs1$count / sum(apl_sqs1$count))
+clsa_sqs1$pct<-c(clsa_sqs1$count / sum(clsa_sqs1$count))
 
 #Plot all datasets in a single plot
 cbs_sqs1$cohort<-"CBS blood donor"
 apl_sqs1$cohort<-"APL outpatient laboratory"
-all_dtsqs<-do.call("rbind",list(cbs_sqs1,apl_sqs1))
+clsa_sqs1$cohort<-"CLSA closed cohort"
+all_dtsqs<-do.call("rbind",list(cbs_sqs1,apl_sqs1,clsa_sqs1))
 
 #Create count binned for visualization
 all_dtsqs$count_binned<-factor(case_when(
@@ -745,8 +771,8 @@ all_dtsqs<-all_dtsqs %>%
 all_dtsqs$cohort<-factor(all_dtsqs$cohort,
                          levels = c(
                            "CBS blood\ndonor","APL outpatient\nlaboratory",
-                           "Ab-C open\ncohort","CanPath closed\ncohort",
-                           "CLSA closed\ncohort"))
+                           "CLSA closed\ncohort","CanPath closed\ncohort",
+                           "Ab-C open\ncohort"))
 
 supp_sqs<-ggplot(all_dtsqs,aes(x = sex, y = factor(quintsoc,
                                          levels = c(1,2,3,
@@ -755,7 +781,7 @@ supp_sqs<-ggplot(all_dtsqs,aes(x = sex, y = factor(quintsoc,
   geom_tile(color = "black",show.legend = T,linewidth = 0.1)+
   scale_fill_discrete(type = blues[c(1,2,4,6,7)])+
   facet_grid(cols = vars(cohort))+
-  geom_text(aes(label = scales::number(count,big.mark = ",")),color = "black",size = 3.0)+
+  geom_text(aes(label = scales::number(count,big.mark = ",")),color = "black",size = 2.5)+
   labs(fill = "Count",
        y = "Social deprivation quintile",
        x = "Sex")+
@@ -763,6 +789,7 @@ supp_sqs<-ggplot(all_dtsqs,aes(x = sex, y = factor(quintsoc,
         legend.position = "right",
         legend.margin = margin(rep(0,4)),
         legend.box.margin = margin(rep(0,4)),
+        legend.key.size = unit(0.50,"cm"),
         legend.spacing.x = unit(0.1,"cm"),
         legend.spacing.y = unit(0.3,"cm"),
         plot.margin = unit(rep(0.00,4),"cm"),
@@ -770,10 +797,11 @@ supp_sqs<-ggplot(all_dtsqs,aes(x = sex, y = factor(quintsoc,
         axis.text = element_text(size = 8),
         axis.title = element_blank(),
         legend.title = element_text(size = 9),
-        axis.text.y = element_text(margin = margin(r = 0.8)))+
+        axis.text.y = element_text(margin = margin(r = 0.8))
+        )+
   guides(fill = guide_legend(byrow = T))
 supp_sqs
-#ggsave("4_output/figs/supp_sqs.svg",width=5.0,height=4.0,unit="in")
+ggsave("4_output/figs/supp_sqs.svg",width=5.0,height=4.0,unit="in")
 
 ggplot(all_dtsqs,aes(x = sex, y = factor(quintsoc,
                                          levels = c(1,2,
@@ -806,41 +834,55 @@ aplpopqs_count$pct_pop<-c(aplpopqs_count$count_census / sum(aplpopqs_count$count
 #Calculate representation ratio -- value = 1 indicates apl sample adequately represents the corresponding population subgroup
 aplpopqs_count$rep_ratio<-aplpopqs_count$pct_apl / aplpopqs_count$pct_pop
 
+# --- CLSA representation ratio ---
+clsapopqs_count<-merge(clsa_sqs1,g_sqs,by = c("sex","quintsoc"),all.x = T)
+colnames(clsapopqs_count)[4]<-"pct_clsa" #percentage of total CLSA samples in each subgroup
+clsapopqs_count<-clsapopqs_count[order(clsapopqs_count$quintsoc,clsapopqs_count$sex),]
+clsapopqs_count$pct_pop<-c(clsapopqs_count$count_census / sum(clsapopqs_count$count_census))
+
+#Calculate representation ratio -- value = 1 indicates clsa sample adequately represents the corresponding population subgroup
+clsapopqs_count$rep_ratio<-clsapopqs_count$pct_clsa / clsapopqs_count$pct_pop
+
 #Plot datasets in a single plot
 cbspopqs_count$cohort<-"CBS blood donor"
 aplpopqs_count$cohort<-"APL outpatient laboratory"
+clsapopqs_count$cohort<-"CLSA closed cohort"
 ccapopqs_count<-ccapopqs_count %>% 
   filter(quintsoc != "All quintiles") %>%
   mutate(cohort = "CCAHS-1 closed cohort")
 namesqs<-c("sex","quintsoc","cohort","rep_ratio")
 allpopqs_count<-do.call("rbind",list(cbspopqs_count[,namesqs],aplpopqs_count[,namesqs],
-                                     ccapopqs_count[,namesqs]))
+                                     ccapopqs_count[,namesqs],clsapopqs_count[,namesqs]))
 
 # Join in results of bootstrap analysis
 cbsqs<-read.csv("./1_data/private/boot_cbs_sqs_5000.csv")
 aplqs<-read.csv("./1_data/private/boot_apl_sqs_5000.csv")
-ccasqs<-read_xlsx("./1_data/private/2016 Canadian Census/10285/Sortie_CCAHS_Census_bootstrap/sqs_provinces_5000.xlsx")
+clsaqs<-read.csv("./1_data/private/boot_clsa_sqs_5000.csv")
+ccasqs<-read_xlsx("./1_data/private/2016 Canadian Census/10285/Sortie_CCAHS_Census_bootstrap/sqs_provinces_5000.xlsx") %>% 
+  mutate(rr_prob_rounded = 0) #null value for bootstrap with weighted data
 ccasqs<-ccasqs %>% 
   filter(quintsoc != "All quintiles") %>% 
   mutate(cohort = "CCAHS-1 closed cohort")
 colnames(ccasqs)[5]<-"rr_prob"
-boot_qs<-do.call("rbind",list(cbsqs,aplqs,ccasqs[,2:5]))
+boot_qs<-do.call("rbind",list(cbsqs,aplqs,ccasqs[,2:5],clsaqs))
 
 allpopqs_count<-merge(allpopqs_count,boot_qs,by = c("sex","quintsoc","cohort"),all.x = T)
 allpopqs_count$cohort<-case_when(
   allpopqs_count$cohort == "CBS blood donor" ~ "CBS blood\ndonor",
   allpopqs_count$cohort == "APL outpatient laboratory" ~ "APL outpatient\nlaboratory",
-  allpopqs_count$cohort == "CCAHS-1 closed cohort" ~ "CCAHS-1 closed\ncohort")
+  allpopqs_count$cohort == "CCAHS-1 closed cohort" ~ "CCAHS-1 closed\ncohort",
+  allpopqs_count$cohort == "CLSA closed cohort" ~ "CLSA closed\ncohort")
 allpopqs_count$cohort<-factor(allpopqs_count$cohort, 
                               levels = c("CBS blood\ndonor","APL outpatient\nlaboratory",
-                                         "CCAHS-1 closed\ncohort"))
+                                         "CCAHS-1 closed\ncohort","CLSA closed\ncohort"))
 #-Set 5: territories by age-sex
 ccapopast_count<-ccapopast_count %>% 
   mutate(cohort = "CCAHS-1 closed\ncohort")
 allpopast_count<-ccapopast_count[,c("sex","age_groups","cohort","rep_ratio")]
 
 #Read in bootstrap results
-ccaast<-read_xlsx("./1_data/private/2016 Canadian Census/10285/Sortie_CCAHS_Census_bootstrap/as_territories_5000.xlsx")
+ccaast<-read_xlsx("./1_data/private/2016 Canadian Census/10285/Sortie_CCAHS_Census_bootstrap/as_territories_5000.xlsx") %>% 
+  mutate(rr_prob_rounded = 0) #null value for bootstrap with weighted data
 ccaast<-ccaast %>% 
   mutate(cohort = "CCAHS-1 closed\ncohort",
          age_groups = ccahs_age(age_groups))
@@ -853,12 +895,7 @@ allpopast_count<-allpopast_count %>%
                              levels = c("All ages","0-17 years","18-26 years",
                                         "27-36 years","37-46 years","47-56 years",
                                         "57+ years")),
-         rr_binned = factor(rr_binned_fun(rep_ratio),
-                            levels = c("Strongly underrepresented (RR < 1/2)",
-                                       "Moderately underrepresented (1/2 \u2264 RR < 3/4)",
-                                       "Adequately represented (3/4 \u2264 RR \u2264 4/3)",
-                                       "Moderately overrepresented (4/3 < RR \u2264 2)",
-                                       "Strongly overrepresented (RR > 2)")))
+         rep_ratio = as.numeric(rep_ratio))
 
 # #- Create figures 1 and 2- ----------------------------------------------
 # Compose age-sex-urban and age-sex-race components of plot
@@ -887,15 +924,9 @@ f<-f %>% mutate(
   strata = factor(strata,
                   levels = c("All","Rural","Urban","Racialized\nminority",
                              "White")),
-  rr_binned = factor(rr_binned_fun(rep_ratio),
-                     levels = c("Strongly underrepresented (RR < 1/2)",
-                                "Moderately underrepresented (1/2 \u2264 RR < 3/4)",
-                                "Adequately represented (3/4 \u2264 RR \u2264 4/3)",
-                                "Moderately overrepresented (4/3 < RR \u2264 2)",
-                                "Strongly overrepresented (RR > 2)")),
   cohort=factor(cohort, levels = c("CBS blood\ndonor","APL outpatient\nlaboratory",
-                                   "CCAHS-1 closed\ncohort","Ab-C open\ncohort",
-                                   "CanPath closed\ncohort","CLSA closed\ncohort")),
+                                   "CCAHS-1 closed\ncohort","CLSA closed\ncohort",
+                                   "CanPath closed\ncohort","Ab-C open\ncohort")),
   age_groups = factor(age_groups,
                       levels = c("All ages","0-17 years","18-26 years",
                                  "27-36 years","37-46 years","47-56 years",
@@ -906,129 +937,104 @@ f<-f %>% mutate(
 f1<-f %>% filter(age_groups == "All ages")
 f2<-f %>% filter(age_groups != "All ages")
 
-allpopqm_count$rep_ratio<-round(as.numeric(allpopqm_count$rep_ratio),1)
 f2_qm<-allpopqm_count %>% 
-  mutate(rr_binned = factor(rr_binned_fun(rep_ratio),
-                            levels = c("Strongly underrepresented (RR < 1/2)",
-                                       "Moderately underrepresented (1/2 \u2264 RR < 3/4)",
-                                       "Adequately represented (3/4 \u2264 RR \u2264 4/3)",
-                                       "Moderately overrepresented (4/3 < RR \u2264 2)",
-                                       "Strongly overrepresented (RR > 2)")))
-allpopqs_count$rep_ratio<-round(as.numeric(allpopqs_count$rep_ratio),1)
+  mutate(rep_ratio = round(as.numeric(rep_ratio),1))
 f2_qs<-allpopqs_count %>% 
-  mutate(rr_binned = factor(rr_binned_fun(rep_ratio),
-                            levels = c("Strongly underrepresented (RR < 1/2)",
-                                       "Moderately underrepresented (1/2 \u2264 RR < 3/4)",
-                                       "Adequately represented (3/4 \u2264 RR \u2264 4/3)",
-                                       "Moderately overrepresented (4/3 < RR \u2264 2)",
-                                       "Strongly overrepresented (RR > 2)")))
-
+  mutate(rep_ratio = round(as.numeric(rep_ratio),1))
 cols<-c("#E16A86","#FFC5D0","#009ADE","#A8E1BF","#50A315")
+
 #Figure 1
 f1_p<-ggplot(f1,aes(x = sex,y = age_groups,
-              fill = rr_binned))+
+              fill = rep_ratio))+
   geom_tile(color = "black",show.legend = T,linewidth = 0.1)+
   geom_text(aes(label = rep_ratio,
-                fontface = ifelse(rr_prob > 0.95,2,1)),
+                fontface = ifelse(rr_prob > 0.95,2,1)), #changed 2nd arg from 2 to 1
             color = "black",size = 3.2)+
   facet_grid(rows = vars(strata),cols = vars(cohort))+
-  labs(fill = "Representativeness\n Ratio (RR)")+
-  scale_fill_manual(values = cols,
-                    labels = c("Strongly underrepresented\n(RR < 1/2)",
-                               "Moderately underrepresented\n(1/2 ≤ RR < 3/4)",
-                               "Adequately represented\n(3/4 ≤ RR ≤ 4/3)",
-                               "Moderately overrepresented\n(4/3 < RR ≤ 2)",
-                               "Not applicable"),
-                    na.value = "grey80")+
+  labs(fill = "Representativeness\nRatio")+
+  scale_fill_gradientn(colours = cols,
+                       values = c(rescale(x = c(0,7/10,1,10/7,3),to = c(0,1))),
+                       n.breaks = 4,
+                       limits = c(0,3),
+                       na.value = "grey80")+
   theme(axis.title = element_blank(),
         axis.ticks.y = element_blank(),
         axis.text.y = element_blank(),
-        legend.position = "bottom",
-        legend.spacing.x = unit(0.2,"cm"),
+        legend.title = element_text(size = 9.0,margin = margin(b = 3)),
+        legend.position = "right",
+        legend.spacing.x = unit(0.1,"cm"),
         legend.text = element_text(size = 8.5),
-        legend.margin = margin(t = 0.1,l = 0.1),
-        legend.key.size = unit(0.20,"inch"))+
-  guides(fill = guide_legend(title = "Representativeness\n Ratio (RR)",
-                             title.position = "left",
-                             label.position = "right",
-                             nrow = 2,byrow = T))
+        legend.margin = margin(t = 0.1,l = 0.1,r = 0.1))
 f1_p<-cowplot::plot_grid(f1_p)
-#ggsave("4_output/figs/f1.svg",width=7.5,height=5.5,unit="in")
+ggsave("4_output/figs/f1.svg",width=8.5,height=6.0,unit="in")
 
 #Quintsoc
 s1_sqs<-ggplot(f2_qs,aes(x = sex,y = factor(quintsoc,levels = c(1:5)),
-                         fill = rr_binned))+
+                         fill = rep_ratio))+
   geom_tile(color = "black",show.legend = T,linewidth = 0.1)+
   geom_text(aes(label = rep_ratio,
                 fontface = ifelse(rr_prob > 0.95,2,1)),
             color = "black",size =3.5)+
   facet_grid(cols = vars(cohort))+
-  labs(fill = "Representativeness \nRatio",
+  labs(fill = "Representativeness \n Ratio (RR)",
        x = "Sex",
        y = "Social deprivation quintile")+
-  scale_fill_manual(values = cols[2:4],
-                    labels = c("Moderately underrepresented\n(1/2 ≤ RR < 3/4)",
-                               "Adequately represented\n(3/4 ≤ RR ≤ 4/3)",
-                               "Moderately overrepresented\n(4/3 < RR ≤ 2)"),
-                    na.value = "grey80")+
-  theme(legend.position = "bottom",
+  scale_fill_gradientn(colours = cols,
+                       values = c(rescale(x = c(0,7/10,1,10/7,3),to = c(0,1))),
+                       n.breaks = 4,
+                       limits = c(0,3),
+                       na.value = "grey80")+
+  theme(legend.position = "right",
         legend.spacing.x = unit(0.05,"cm"),
         legend.text = element_text(size = 8),
-        legend.title = element_text(size = 9),
+        legend.title = element_text(size = 9,margin = margin(b = 3)),
         legend.margin=margin(-0.5, 0, 0, 0),
         strip.text = element_text(size = 9.0),
-        axis.title = element_blank())+
-  guides(fill = guide_legend(label.position = "right",byrow = T))
+        axis.title = element_blank())
 s1_sqs
-#ggsave("4_output/figs/s1_sqs.svg",width=7.0,height=4.0,unit="in")
+ggsave("4_output/figs/s1_sqs.svg",width=7.0,height=4.0,unit="in")
 
 #Territories by age-sex
 ast_rr<-ggplot(allpopast_count,aes(x = sex,y = age_groups,
-              fill = rr_binned))+
+              fill = rep_ratio))+
   geom_tile(color = "black",show.legend = T,linewidth = 0.1)+
   geom_text(aes(label = rep_ratio,
                 fontface = ifelse(rr_prob > 0.95,2,1)),
             color = "black",size = 3.5)+
   facet_grid(cols = vars(cohort))+
-  labs(fill = "Representativeness\n Ratio (RR)",
+  labs(fill = "Representativeness\nRatio",
        x = "Sex",
        y = "Age group")+
-  scale_fill_manual(values = cols,
-                    labels = c("Strongly underrepresented\n(RR < 1/2)",
-                               "Moderately underrepresented\n(1/2 ≤ RR < 3/4)",
-                               "Adequately represented\n(3/4 ≤ RR ≤ 4/3)",
-                               "Moderately overrepresented\n(4/3 < RR ≤ 2)",
-                               "Strongly overrepresented\n(RR > 2)",
-                               "Not applicable"))+
+  scale_fill_gradientn(colours = cols,
+                       values = c(rescale(x = c(0,7/10,1,10/7,3),to = c(0,1))),
+                       n.breaks = 4,
+                       limits = c(0,3),
+                       na.value = "grey80")+
   scale_y_discrete(labels = c("All ages" = expression(bold("All ages")),"0-17 years" = "0-17",
                               "18-26 years" = "18-26","27-36 years" = "27-36",
                               "37-46 years" = "37-46","47-56 years" = "47-56",
                               "57+ years" = "Age 57+"))+
   theme(axis.title = element_blank(),
         legend.spacing.x = unit(0.2,"cm"),
-        legend.text = element_text(size = 7),
-        legend.title = element_text(size = 8.5))+
-  guides(fill = guide_legend(byrow = T))
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 9,margin = margin(b = 3)))
 ast_rr
-#ggsave("4_output/figs/supp_astrr.svg",width = 6.0,height = 3.5)
+ggsave("4_output/figs/supp_astrr.svg",width = 6.0,height = 3.5)
 
-#Figure 2 all ages
-f2p<-ggplot(f2,aes(x = sex,y = age_groups,
-              fill = rr_binned))+
+#Figure 2
+f2_p<-ggplot(f2,aes(x = sex,y = age_groups,
+                   fill = rep_ratio))+
   geom_tile(color = "black",show.legend = F,linewidth = 0.1)+
   geom_text(aes(label = rep_ratio,
                 fontface = ifelse(rr_prob > 0.95,2,1)),
             color = "black",size = 3.2)+
   facet_grid(rows = vars(strata),cols = vars(cohort))+
-  labs(fill = "Representativeness\n Ratio (RR)")+
-  scale_fill_manual(values = cols,
-                    labels = c("Strongly underrepresented\n(RR < 1/2)",
-                               "Moderately underrepresented\n(1/2 ≤ RR < 3/4)",
-                               "Adequately represented\n(3/4 ≤ RR ≤ 4/3)",
-                               "Moderately overrepresented\n(4/3 < RR ≤ 2)",
-                               "Strongly overrepresented\n(RR > 2)",
-                               "Not applicable"),
-                    na.value = "grey80")+
+  labs(fill = "Representativeness\nRatio")+
+  scale_fill_gradientn(colours = cols,
+                       values = c(rescale(x = c(0,7/10,1,10/7,3),to = c(0,1))),
+                       n.breaks = 4,
+                       limits = c(0,3),
+                      na.value = "grey80")+
   scale_y_discrete(labels = c("0-17 years" = "0-17",
                               "18-26 years" = "18-26","27-36 years" = "27-36",
                               "37-46 years" = "37-46","47-56 years" = "47-56",
@@ -1040,58 +1046,9 @@ f2p<-ggplot(f2,aes(x = sex,y = age_groups,
         legend.margin=margin(-0.5, 0, 0, 0),
         axis.title = element_blank())+
   guides(fill = guide_legend(label.position = "right",nrow = 2,byrow = T))
-f2p
+
 #Figure 2 quintmat
-f2_qmp<-ggplot(f2_qm,aes(x = sex,y = factor(quintmat,levels = c(1:5)),
-                                  fill = rr_binned))+
-  geom_tile(color = "black",show.legend = F,linewidth = 0.1)+
-  scale_fill_discrete(type = cols)+
-  geom_text(aes(label = rep_ratio,
-                fontface = ifelse(rr_prob > 0.95,2,1)),
-            color = "black",size = 3.2)+
-  facet_grid(cols = vars(cohort))+
-  labs(fill = "Representativeness Ratio")+
-  theme(axis.title = element_blank(),
-        plot.margin = margin(0.1,0.1,0.1,0.1))
-
-#Combine plots
-g1<-ggplotGrob(f2p)
-g2<-ggplotGrob(f2_qmp)
-w<-g1$heights[1]
-g1$heights[1]<-w * 4 #shrink top graph by increasing size of white space on top
-g2$widths[11]<-3.75*g1$widths[5] #shrink width of mat dep part
-gtable::gtable_show_layout(g1)
-g2$widths[4]<-g2$widths[4] * 4.73 #shift bottom portion to the right while keeping axis label the same
-g2$widths[5]<-g1$widths[5] * 1.05 #widen first panel
-g2$widths[7]<-g1$widths[7] * 1.05 #widen second panel
-g2$widths[9]<-g1$widths[9] * 1.05 #widen third panel
-g2$heights[9]<-g1$heights[7] * 7
-gridExtra::grid.arrange(g1,g2)
-f2f<-gridExtra::grid.arrange(g1,g2)
-
-#ggsave("4_output/figs/f2.svg",plot = f2f,width=8,height=10,unit="in")
-
-#Alternative figure 2: continuous color scale
-f2_a1<-ggplot(f2,aes(x = sex,y = age_groups,
-                   fill = rep_ratio))+
-  geom_tile(color = "black",show.legend = F,linewidth = 0.1)+
-  geom_text(aes(label = rep_ratio,
-                fontface = ifelse(rr_prob > 0.95,2,1)),
-            color = "black",size = 3.2)+
-  facet_grid(rows = vars(strata),cols = vars(cohort))+
-  labs(fill = "Representativeness\n Ratio (RR)")+
-  scale_fill_gradientn(colours = cols,
-                       values = c(rescale(x = c(0,7/10,1,10/7,3),to = c(0,1))),
-                       n.breaks = 4,
-                       limits = c(0,3),
-                      na.value = "grey80")+
-  scale_y_discrete(labels = c("0-17 years" = "0-17",
-                              "18-26 years" = "18-26","27-36 years" = "27-36",
-                              "37-46 years" = "37-46","47-56 years" = "47-56",
-                              "57+ years" = "Age 57+"))
-
-#Alternative figure 2 quintmat
-f2_qma1<-ggplot(f2_qm,aes(x = sex,y = factor(quintmat,levels = c(1:5)),
+f2_qm<-ggplot(f2_qm,aes(x = sex,y = factor(quintmat,levels = c(1:5)),
                          fill = rep_ratio))+
   geom_tile(color = "black",show.legend = F,linewidth = 0.1)+
   scale_fill_gradientn(colours = cols,
@@ -1108,20 +1065,21 @@ f2_qma1<-ggplot(f2_qm,aes(x = sex,y = factor(quintmat,levels = c(1:5)),
         plot.margin = margin(0.1,0.1,0.1,0.1))
 
 #Combine alternative plots
-g1<-ggplotGrob(f2_a1)
-g2<-ggplotGrob(f2_qma1)
+g1<-ggplotGrob(f2_p)
+g2<-ggplotGrob(f2_qm)
 w<-g1$heights[1]
 g1$heights[1]<-w * 4 #shrink top graph by increasing size of white space on top
-g2$widths[11]<-3.75*g1$widths[5] #shrink width of mat dep part
-gtable::gtable_show_layout(g1)
+g2$widths[12]<-2.68*g1$widths[5] #shrink width of mat dep part
+gtable::gtable_show_layout(g2)
 g2$widths[4]<-g2$widths[4] * 4.73 #shift bottom portion to the right while keeping axis label the same
 g2$widths[5]<-g1$widths[5] * 1.05 #widen first panel
 g2$widths[7]<-g1$widths[7] * 1.05 #widen second panel
 g2$widths[9]<-g1$widths[9] * 1.05 #widen third panel
+g2$widths[11]<-g1$widths[11] * 1.05 #widen fourth panel
 g2$heights[9]<-g1$heights[7] * 7
 gridExtra::grid.arrange(g1,g2)
-f2a1<-gridExtra::grid.arrange(g1,g2)
-ggsave("4_output/figs/f2_continuous.svg",plot = f2a1,width=8,height=10,unit="in")
+f2_pf<-gridExtra::grid.arrange(g1,g2)
+ggsave("4_output/figs/f2_continuous.svg",plot = f2_pf,width=8,height=10,unit="in")
 
 # Sensitivity analysis 1: classify mixed race as "White" ------------------
 abc_dtasr1<-merge(asr_synth[,c("age_groups","sex","race1")],abc_asr2,
@@ -1148,10 +1106,9 @@ can_dtasr1$cohort<-"CanPath closed\ncohort"
 all_dtasr1<-do.call("rbind",list(abc_dtasr1,clsa_dtasr1,can_dtasr1))
 
 all_dtasr1$cohort<-factor(all_dtasr1$cohort,
-                          levels = c("Ab-C open\ncohort",
+                          levels = c("CLSA closed\ncohort",
                                      "CanPath closed\ncohort",
-                                     "CLSA closed\ncohort"
-                          ))
+                                     "Ab-C open\ncohort"))
 all_dtasr1$count_binned<-factor(case_when(
   all_dtasr1$count <= 1000 ~ "Count \u2264 1,000",
   all_dtasr1$count > 1000 & all_dtasr1$count <= 5000 ~ "1,000 < Count \u2264 5,000",
@@ -1218,7 +1175,7 @@ supp_sensr1<-ggplot(all_dtasr1,aes(x = sex, y = factor(age_groups,
         axis.text.y = element_text(margin = margin(r = 0.1)))+
   guides(fill = guide_legend(byrow = T))
 supp_sensr1
-#ggsave("4_output/figs/supp_sensr1.svg",width=6.5,height=5.0,unit="in")
+ggsave("4_output/figs/supp_sensr1.svg",width=6.5,height=5.0,unit="in")
 
 ggplot(all_dtasr1,aes(x = sex, y = factor(age_groups,
                                           levels = c("All ages",
@@ -1291,7 +1248,8 @@ clsa1<-read.csv("./1_data/private/boot_clsa_asr1_5000.csv")
 can1<-read.csv("./1_data/private/boot_can_asr1_5000.csv")
 ccar1<-read_xlsx("1_data/private/2016 Canadian Census/10285/Sortie_CCAHS_Census_bootstrap/asr1_provinces_5000.xlsx") %>% 
   mutate(age_groups = ccahs_age(age_groups),
-         cohort = "CCAHS-1 closed cohort")
+         cohort = "CCAHS-1 closed cohort",
+         rr_prob_rounded = 0) #null value for bootstrap with weighted data)
 colnames(ccar1)[6]<-"rr_prob"
 boot_race1<-do.call("rbind",list(abcr1,clsa1,can1,ccar1[,2:6]))
 
@@ -1315,15 +1273,8 @@ allpopr_count1<-allpopr_count1 %>%
 
 allpopr_count1<-allpopr_count1 %>% 
   mutate(
-    rr_binned = factor(rr_binned_fun(rep_ratio),
-                       levels = c("Strongly underrepresented (RR < 1/2)",
-                                  "Moderately underrepresented (1/2 \u2264 RR < 3/4)",
-                                  "Adequately represented (3/4 \u2264 RR \u2264 4/3)",
-                                  "Moderately overrepresented (4/3 < RR \u2264 2)",
-                                  "Strongly overrepresented (RR > 2)")),
-    cohort=factor(cohort, levels = c("CCAHS-1 closed\ncohort",
-                                     "Ab-C open\ncohort","CanPath closed\ncohort",
-                                     "CLSA closed\ncohort")),
+    cohort=factor(cohort, levels = c("CCAHS-1 closed\ncohort","CanPath closed\ncohort",
+                                     "CLSA closed\ncohort","Ab-C open\ncohort")),
     age_groups = factor(age_groups,
                         levels = c("All ages","0-17 years","18-26 years",
                                    "27-36 years","37-46 years","47-56 years",
@@ -1333,60 +1284,32 @@ allpopr_count1<-allpopr_count1 %>%
 f1_s1<-allpopr_count1 %>% filter(age_groups == "All ages")
 f2_s1<-allpopr_count1 %>% filter(age_groups != "All ages")
 
-
-ggplot(f1_s1,aes(x = sex,y = age_groups,
-                 fill = rr_binned))+
-  geom_tile(color = "black",show.legend = T,linewidth = 0.1)+
-  geom_text(aes(label = rep_ratio,
-                fontface = ifelse(rr_prob > 0.95,2,1)),
-            color = "black",size = 2.5)+
-  facet_grid(rows = vars(race1),cols = vars(cohort))+
-  labs(fill = "Representativeness\n Ratio (RR)",
-       x = "Sex",
-       y = "Age group")+
-  scale_fill_manual(values = cols[c(1,3,4)],
-                    labels = c("Strongly underrepresented\n(RR < 1/2)",
-                                "Adequately represented\n(3/4 ≤ RR ≤ 4/3)",
-                               "Moderately overrepresented\n (4/3 < RR ≤ 2)"))+
-  scale_y_discrete(labels = c("0-17 years" = "0-17",
-                              "18-26 years" = "18-26","27-36 years" = "27-36",
-                              "37-46 years" = "37-46","47-56 years" = "47-56",
-                              "57+ years" = "Age 57+"))+
-  theme(axis.text.y = element_blank(),
-        axis.ticks.y = element_blank(),
-        legend.position = "bottom",
-        legend.spacing.x = unit(0.4,"cm"))+
-  guides(fill = guide_legend(label.position = "right"))
-
 supp_sensr1rr<-ggplot(f2_s1,aes(x = sex,y = age_groups,
-                 fill = rr_binned))+
+                 fill = rep_ratio))+
   geom_tile(color = "black",show.legend = T,linewidth = 0.1)+
   geom_text(aes(label = rep_ratio,
                 fontface = ifelse(rr_prob > 0.95,2,1)),
             color = "black",size = 4.0)+
   facet_grid(rows = vars(race1),cols = vars(cohort))+
-  labs(fill = "Representativeness\n Ratio (RR)",
+  labs(fill = "Representativeness\nRatio",
        x = "Sex",
        y = "Age group")+
   scale_y_discrete(labels = c("0-17 years" = "0-17",
                               "18-26 years" = "18-26","27-36 years" = "27-36",
                               "37-46 years" = "37-46","47-56 years" = "47-56",
                               "57+ years" = "Age 57+"))+
-  scale_fill_manual(values = cols,
-                    labels = c("Strongly underrepresented\n(RR < 1/2)",
-                               "Moderately underrepresented\n(1/2 ≤ RR < 3/4)",
-                               "Adequately represented\n(3/4 ≤ RR ≤ 4/3)",
-                               "Moderately overrepresented\n(4/3 < RR ≤ 2)",
-                               "Strongly overrepresented\n(RR > 2)",
-                               "Not applicable"),
-                    na.value = "grey80")+
-  theme(legend.position = "bottom",
+  scale_fill_gradientn(colours = cols,
+                       values = c(rescale(x = c(0,7/10,1,10/7,3),to = c(0,1))),
+                       n.breaks = 4,
+                       limits = c(0,3),
+                       na.value = "grey80")+
+  theme(legend.position = "right",
         legend.spacing.x = unit(0.1,"cm"),
-        legend.text = element_text(size = 9),
-        axis.title = element_blank())+
-  guides(fill = guide_legend(byrow = T,label.position = "right"))
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 9,margin = margin(b = 3)),
+        axis.title = element_blank())
 supp_sensr1rr
-#ggsave("4_output/figs/supp_sensr1rr.svg",width = 8, height = 6.0,units = "in")
+ggsave("4_output/figs/supp_sensr1rr.svg",width = 8, height = 6.0,units = "in")
 
 # Sensitivity analysis #2: ------------------------------------------------
 #Age-sex-urban
@@ -1455,6 +1378,37 @@ boot_races2<-do.call("rbind",list(clsars2,canrs2))
 
 allpoprs2_count<-merge(allpoprs2_count,boot_races2,by = c("age_groups","sex","race","cohort"),
                      all.x = T)
+#Sex-quintmat
+# --- CLSA representation ratio ---
+clsapopqms2_count<-merge(clsa_sqm1,g_sqms2,by = c("sex","quintmat"),all.x = T)
+colnames(clsapopqms2_count)[4]<-"pct_clsa" #percentage of total CLSA samples in each subgroup
+clsapopqms2_count<-clsapopqms2_count[order(clsapopqms2_count$quintmat,clsapopqms2_count$sex),]
+clsapopqms2_count$pct_pop<-c(clsapopqms2_count$count_census / sum(clsapopqms2_count$count_census))
+
+#Calculate representation ratio -- value = 1 indicates clsa sample adequately represents the corresponding population subgroup
+clsapopqms2_count$rep_ratio<-clsapopqms2_count$pct_clsa / clsapopqms2_count$pct_pop
+
+#Join in results of bootstrap analysis
+boot_clsasqm2<-read.csv("1_data/private/boot_clsa_sqm_5000_s2.csv")
+
+allpopqm2<-merge(clsapopqms2_count,boot_clsasqm2,by = c("sex","quintmat","cohort"),all.x = T)
+allpopqm2$cohort<-"CLSA closed\ncohort"
+
+#Sex-quintsoc
+# --- CLSA representation ratio ---
+clsapopqss2_count<-merge(clsa_sqs1,g_sqss2,by = c("sex","quintsoc"),all.x = T)
+colnames(clsapopqss2_count)[4]<-"pct_clsa" #percentage of total CLSA samples in each subgroup
+clsapopqss2_count<-clsapopqss2_count[order(clsapopqss2_count$quintsoc,clsapopqss2_count$sex),]
+clsapopqss2_count$pct_pop<-c(clsapopqss2_count$count_census / sum(clsapopqss2_count$count_census))
+
+#Calculate representation ratio -- value = 1 indicates clsa sample adequately represents the corresponding population subgroup
+clsapopqss2_count$rep_ratio<-clsapopqss2_count$pct_clsa / clsapopqss2_count$pct_pop
+
+#Join in results of bootstrap analysis
+boot_clsasqs2<-read.csv("1_data/private/boot_clsa_sqs_5000_s2.csv")
+
+allpopqs2<-merge(clsapopqss2_count,boot_clsasqs2,by = c("sex","quintsoc","cohort"),all.x = T)
+allpopqs2$cohort<-"CLSA closed\ncohort"
 
 #Plot
 colnames(allpopus2_count)[3]<-"strata"
@@ -1483,15 +1437,9 @@ fs2<-fs2 %>% mutate(
   strata = factor(strata,
                   levels = c("All","Rural","Urban","Racialized\nminority",
                              "White")),
-  rr_binned = factor(rr_binned_fun(rep_ratio),
-                     levels = c("Strongly underrepresented (RR < 1/2)",
-                                "Moderately underrepresented (1/2 \u2264 RR < 3/4)",
-                                "Adequately represented (3/4 \u2264 RR \u2264 4/3)",
-                                "Moderately overrepresented (4/3 < RR \u2264 2)",
-                                "Strongly overrepresented (RR > 2)")),
   cohort=factor(cohort, levels = c("CBS blood\ndonor","APL outpatient\nlaboratory",
                                    "CCAHS-1 closed\ncohort","Ab-C open\ncohort",
-                                   "CanPath closed\ncohort","CLSA closed\ncohort")),
+                                   "CLSA closed\ncohort","CanPath closed\ncohort")),
   age_groups = factor(age_groups,
                       levels = c("All ages","0-17 years","18-26 years",
                                  "27-36 years","37-46 years","47-56 years",
@@ -1500,50 +1448,53 @@ fs2<-fs2 %>% mutate(
 f1s2<-fs2 %>% filter(age_groups == "All ages")
 f2s2<-fs2 %>% filter(age_groups != "All ages")
 
-cols<-c("#E16A86","#FFC5D0","#009ADE","#A8E1BF","#50A315")
-#Figure 1
-ggplot(f1s2,aes(x = sex,y = age_groups,
-              fill = rr_binned))+
+f2_qm2<-allpopqm2 %>% 
+  mutate(rep_ratio = round(as.numeric(rep_ratio),1))
+f2_qs2<-allpopqs2 %>% 
+  mutate(rep_ratio = round(as.numeric(rep_ratio),1))
+
+#Quintsoc
+s2_sqs<-ggplot(f2_qs2,aes(x = sex,y = factor(quintsoc,levels = c(1:5)),
+                         fill = rep_ratio))+
   geom_tile(color = "black",show.legend = T,linewidth = 0.1)+
   geom_text(aes(label = rep_ratio,
                 fontface = ifelse(rr_prob > 0.95,2,1)),
-            color = "black",size = 2.5)+
-  facet_grid(rows = vars(strata),cols = vars(cohort))+
-  labs(fill = "Representativeness\n Ratio (RR)",
+            color = "black",size =3.5)+
+  facet_grid(cols = vars(cohort))+
+  labs(fill = "Representativeness \nRatio",
        x = "Sex",
-       y = "")+
-  scale_fill_manual(values = cols,
-                    labels = c("Strongly underrepresented\n(RR < 1/2)",
-                               "Moderately underrepresented\n (1/2 ≤ RR < 3/4)",
-                               "Adequately represented\n (3/4 ≤ RR ≤ 4/3)",
-                               "Moderately overrepresented\n (4/3 < RR ≤ 2)",
-                               "Not applicable"),
-                    na.value = "grey80")+
-  theme(axis.text.y = element_blank(),
-        axis.ticks.y = element_blank(),
-        legend.position = "bottom",
-        legend.spacing.x = unit(0.4,"cm"))+
-  guides(fill = guide_legend(label.position = "right"))
+       y = "Social deprivation quintile")+
+  scale_fill_gradientn(colours = cols,
+                       values = c(rescale(x = c(0,7/10,1,10/7,3),to = c(0,1))),
+                       n.breaks = 4,
+                       limits = c(0,3),
+                       na.value = "grey80")+
+  theme(legend.position = "bottom",
+        legend.spacing.x = unit(0.05,"cm"),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 9),
+        legend.margin=margin(-0.5, 0, 0, 0),
+        strip.text = element_text(size = 9.0),
+        axis.title = element_blank())
+s2_sqs
+ggsave("4_output/figs/s2_sqs.svg",width=7.0,height=4.0,unit="in")
 
 #Figure 2 all ages
 supp_sensr2rr<-ggplot(f2s2,aes(x = sex,y = age_groups,
-              fill = rr_binned))+
-  geom_tile(color = "black",show.legend = T,linewidth = 0.1)+
+              fill = rep_ratio))+
+  geom_tile(color = "black",show.legend = F,linewidth = 0.1)+
   geom_text(aes(label = rep_ratio,
                 fontface = ifelse(rr_prob > 0.95,2,1)),
             color = "black",size = 3.0)+
   facet_grid(rows = vars(strata),cols = vars(cohort))+
-  labs(fill = "Representativeness\n Ratio (RR)",
+  labs(fill = "Representativeness\nRatio",
        x = "Sex",
        y = "Age group")+
-  scale_fill_manual(values = cols,
-                    labels = c("Strongly underrepresented\n(RR < 1/2)",
-                               "Moderately underrepresented\n(1/2 ≤ RR < 3/4)",
-                               "Adequately represented\n(3/4 ≤ RR ≤ 4/3)",
-                               "Moderately overrepresented\n(4/3 < RR ≤ 2)",
-                               "Strongly overrepresented\n(RR > 2)",
-                               "Not applicable"),
-                    na.value = "grey80")+
+  scale_fill_gradientn(colours = cols,
+                       values = c(rescale(x = c(0,7/10,1,10/7,3),to = c(0,1))),
+                       n.breaks = 4,
+                       limits = c(0,3),
+                       na.value = "grey80")+
   scale_y_discrete(labels = c("0-17 years" = "0-17",
                               "18-26 years" = "18-26","27-36 years" = "27-36",
                               "37-46 years" = "37-46","47-56 years" = "47-56",
@@ -1555,7 +1506,38 @@ supp_sensr2rr<-ggplot(f2s2,aes(x = sex,y = age_groups,
         legend.spacing.x = unit(0.1,"cm"),
         legend.spacing.y = unit(0.3,"cm"),
         legend.title = element_text(size = 10),
-        axis.title = element_blank())+
-  guides(fill = guide_legend(byrow = T,label.position = "right",nrow = 2))
+        axis.title = element_blank())
 supp_sensr2rr
-#ggsave("4_output/figs/supp_sensr2rr.svg",width = 7.5, height = 6,units = "in")
+
+#Figure 2 quintmat
+s2_sqm<-ggplot(f2_qm2,aes(x = sex,y = factor(quintmat,levels = c(1:5)),
+                         fill = rep_ratio))+
+  geom_tile(color = "black",show.legend = F,linewidth = 0.1)+
+  scale_fill_gradientn(colours = cols,
+                       values = c(rescale(x = c(0,7/10,1,10/7,3),to = c(0,1))),
+                       n.breaks = 4,
+                       limits = c(0,3),
+                       na.value = "grey80")+
+  geom_text(aes(label = rep_ratio,
+                fontface = ifelse(rr_prob > 0.95,2,1)),
+            color = "black",size = 3.2)+
+  facet_grid(cols = vars(cohort))+
+  labs(fill = "Representativeness Ratio")+
+  theme(axis.title = element_blank(),
+        plot.margin = margin(0.1,0.1,0.1,0.1))
+
+#Combine alternative plots
+g1<-ggplotGrob(supp_sensr2rr)
+g2<-ggplotGrob(s2_sqm)
+w<-g1$heights[1]
+g1$heights[1]<-w * 4 #shrink top graph by increasing size of white space on top
+g1$heights[19]<-g1$heights[19] * 2 #lengthen top part of graph
+g2$heights[1]<-g2$heights[1] * 0.75
+g2$widths[9]<-2.77*g1$widths[5] #shrink width of mat dep part
+g1$widths[12]<-1.5*g1$widths[5] #shrink width of top part
+g2$heights[9]<-g2$heights[9] *10 #shrink height of mat dep part from bottom up
+gtable::gtable_show_layout(g2)
+g2$widths[4]<-g2$widths[4] * 4.77 #shift bottom portion to the right while keeping axis label the same
+gridExtra::grid.arrange(g1,g2)
+f2a2<-gridExtra::grid.arrange(g1,g2)
+ggsave("4_output/figs/supp_sens2rr.svg",plot = f2a2,width=7,height=9,unit="in")

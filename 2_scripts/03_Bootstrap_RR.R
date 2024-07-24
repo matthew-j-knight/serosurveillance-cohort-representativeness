@@ -31,10 +31,12 @@ g_asr<-read.csv("./1_data/private/2016 Canadian Census/censusasr_g_clsa.csv") #c
 #Read in 2016 census datasets (quintmat) 
 c_sqm<-read.csv("./1_data/private/2016 Canadian Census/censussqm_c_cbs.csv") #CBS
 e_sqm<-read.csv("./1_data/private/2016 Canadian Census/censussqm_e_apl.csv") #APL
+g_sqm<-read.csv("./1_data/private/2016 Canadian Census//censussqm_g_clsa.csv") #CLSA
 
 #Read in 2016 census datasets (quintsoc)
 c_sqs<-read.csv("./1_data/private/2016 Canadian Census/censussqs_c_cbs.csv") #CBS
 e_sqs<-read.csv("./1_data/private/2016 Canadian Census/censussqs_e_apl.csv") #APL
+g_sqs<-read.csv("./1_data/private/2016 Canadian Census//censussqs_g_clsa.csv") #CLSA
 
 #Prepare 2016 census datasets for sensitivity analysis #1
 a_asr1<-a_asr %>% 
@@ -49,6 +51,8 @@ d_asus2<-read.csv("./1_data/private/2016 Canadian Census/censusasu_d_canpath_s2.
 g_asus2<-read.csv("./1_data/private/2016 Canadian Census/censusasu_g_clsa_s2.csv") #clsa
 d_asrs2<-read.csv("./1_data/private/2016 Canadian Census/censusasr_d_canpath_s2.csv") #canpath
 g_asrs2<-read.csv("./1_data/private/2016 Canadian Census/censusasr_g_clsa_s2.csv") #clsa
+g_sqm2<-read.csv("./1_data/private/2016 Canadian Census/censussqm_g_clsa_s2.csv") #clsa
+g_sqs2<-read.csv("./1_data/private/2016 Canadian Census/censussqs_g_clsa_s2.csv") #clsa
 
 #Load functions
 source("2_scripts/00_Helper_Functions.R")
@@ -130,8 +134,9 @@ abcsum_output<-data.frame(abcsum_output)
 colnames(abcsum_output)<-c("mean","2.5","25","50","75","95")
 abcsum_output<-cbind(abcsum_output,subcount[,c("age_groups","sex","urban")])
 
-#write_csv(abc_fin,"./1_data/private/boot_abc_asu_5000.csv")
-#write_csv(abcsum_output,"boot_abc_asu_5000_sumstats.csv")
+write_csv(output,"./1_data/private/boot_abc_asu_5000_rr.csv")
+write_csv(abc_fin,"./1_data/private/boot_abc_asu_5000.csv")
+write_csv(abcsum_output,"./1_data/private/boot_abc_asu_5000_sumstats.csv")
 
 #Setting B (CCAHS) 
 
@@ -210,8 +215,9 @@ cbssum_output<-data.frame(cbssum_output)
 colnames(cbssum_output)<-c("mean","2.5","25","50","75","95")
 cbssum_output<-cbind(cbssum_output,subcount[,c("age_groups","sex","urban")])
 
-#write_csv(cbs_fin,"./1_data/private/boot_cbs_asu_5000.csv")
-#write_csv(cbssum_output,"boot_csb_asu_5000_sumstats.csv")
+write_csv(output,"./1_data/private/boot_cbs_asu_5000_rr.csv")
+write_csv(cbs_fin,"./1_data/private/boot_cbs_asu_5000.csv")
+write_csv(cbssum_output,"./1_data/private/boot_csb_asu_5000_sumstats.csv")
 
 #Setting D (CanPath)
 n_replicates<-5000 #number of bootstrap iterations
@@ -287,8 +293,9 @@ cansum_output<-data.frame(cansum_output)
 colnames(cansum_output)<-c("mean","2.5","25","50","75","95")
 cansum_output<-cbind(cansum_output,subcount[,c("age_groups","sex","urban")])
 
-#write_csv(can_fin,"./1_data/private/boot_can_asu_5000.csv")
-#write_csv(cansum_output,"boot_can_asu_5000_sumstats.csv")
+write_csv(output,"./1_data/private/boot_can_asu_5000_rr.csv")
+write_csv(can_fin,"./1_data/private/boot_can_asu_5000.csv")
+write_csv(cansum_output,"./1_data/private/boot_can_asu_5000_sumstats.csv")
 
 #Setting E (APL)
 n_replicates<-5000 #number of bootstrap iterations
@@ -366,8 +373,9 @@ aplsum_output<-data.frame(aplsum_output)
 colnames(aplsum_output)<-c("mean","2.5","25","50","75","95")
 aplsum_output<-cbind(aplsum_output,subcount[,c("age_groups","sex","urban")])
 
-#write_csv(apl_fin,"./1_data/private/boot_apl_asu_5000.csv")
-#write_csv(aplsum_output,"boot_apl_asu_5000_sumstats.csv")
+write_csv(output,"./1_data/private/boot_apl_asu_5000_rr.csv")
+write_csv(apl_fin,"./1_data/private/boot_apl_asu_5000.csv")
+write_csv(aplsum_output,"./1_data/private/boot_apl_asu_5000_sumstats.csv")
 
 #Setting F (CCAHS territories)
 
@@ -446,8 +454,9 @@ clsasum_output<-data.frame(clsasum_output)
 colnames(clsasum_output)<-c("mean","2.5","25","50","75","95")
 clsasum_output<-cbind(clsasum_output,subcount[,c("age_groups","sex","urban")])
 
-#write_csv(clsa_fin,"./1_data/private/boot_clsa_asu_5000.csv")
-#write_csv(clsasum_output,"boot_clsa_asu_5000_sumstats.csv")
+write_csv(output,"./1_data/private/boot_clsa_asu_5000_rr.csv")
+write_csv(clsa_fin,"./1_data/private/boot_clsa_asu_5000.csv")
+write_csv(clsasum_output,"./1_data/private/boot_clsa_asu_5000_sumstats.csv")
 
 # Bootstrap age-sex-race representativeness ratios ------------------------
 
@@ -732,8 +741,8 @@ for(i in 1:ncol(output)){
 clsarsum_output<-data.frame(clsarsum_output)
 colnames(clsarsum_output)<-c("mean","2.5","25","50","75","95")
 clsarsum_output<-cbind(clsarsum_output,subcount[,c("age_groups","sex","race")])
-write_csv(clsar_fin,"./1_data/private/boot_clsa_asr_5000.csv")
-write_csv(clsarsum_output,"boot_clsa_asr_5000_sumstats.csv")
+#write_csv(clsar_fin,"./1_data/private/boot_clsa_asr_5000.csv")
+#write_csv(clsarsum_output,"boot_clsa_asr_5000_sumstats.csv")
 
 # Bootstrap sex-quintmat representation ratios ----------------------------
 
@@ -869,7 +878,71 @@ aplqmsum_output<-cbind(aplqmsum_output,subcount[,c("sex","quintmat")])
 #write_csv(aplqm_fin,"./1_data/private/boot_apl_sqm_5000.csv")
 #write_csv(aplqmsum_output,"boot_apl_sqm_5000_sumstats.csv")
 
-#Setting F (CCAHS territories)
+#Setting G (CLSA)
+#Initialize
+n_replicates<-5000 #number of bootstrap iterations
+collect<-NULL
+
+#Manually add in required dataset as "data" and set up .csv at the bottom (saves computational resources)
+data<-clsa_df
+
+output<-matrix(NA,nrow = n_replicates,
+               ncol = 10)
+
+#Run for CLSA
+set.seed(4)
+for(i in 1:n_replicates){
+  #draw bootstrap resample
+  df<-data[sample(1:nrow(data),size = nrow(data),replace = T),]
+  
+  #calculate counts by subgroup in resample
+  group<-df %>% 
+    filter(!is.na(quintmat)) %>% 
+    group_by(sex,quintmat) %>% 
+    summarize(count = n()) %>% 
+    ungroup()
+  
+  #merge resample with corresponding census dataset
+  subcount<-merge(group,g_sqm,by = c("sex","quintmat"),all.y = TRUE)
+  
+  #calculate proportions and RR
+  subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
+  subcount<-subcount[order(subcount$quintmat,subcount$sex),]
+  subcount$pct_resample<-c(subcount$count / sum(subcount$count))
+  subcount$pct_pop<-c(subcount$count_census / sum(subcount$count_census))
+  subcount$rr<-subcount$pct_resample / subcount$pct_pop
+  
+  #save output to matrix
+  output[i,]<-subcount$rr
+  print(paste("Run",i,"complete"))
+}
+
+#label columns and make data.frame
+output<-data.frame(output)
+
+#perform calculation and re-assign bootstrap probability to each subgroup combination
+clsaqm_fin<-cbind(subcount[,c("sex","quintmat")],sapply(output,rrfun))
+colnames(clsaqm_fin)[3]<-"rr_prob"
+clsaqm_fin$cohort<-"CLSA closed cohort"
+
+#calculate summary statistics (quantiles,mean)
+clsaqmsum_output<-matrix(NA,nrow = ncol(output),
+                        ncol = 6)
+for(i in 1:ncol(output)){
+  df<-output[,i]
+  col_mean<-mean(df)
+  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.95),
+                       na.rm = T)
+  final<-c(col_mean,col_quants)
+  clsaqmsum_output[i,]<-final
+  
+}
+
+clsaqmsum_output<-data.frame(clsaqmsum_output)
+colnames(clsaqmsum_output)<-c("mean","2.5","25","50","75","95")
+clsaqmsum_output<-cbind(clsaqmsum_output,subcount[,c("sex","quintmat")])
+#write_csv(clsaqm_fin,"./1_data/private/boot_clsa_sqm_5000.csv")
+#write_csv(clsaqmsum_output,"boot_clsa_sqm_5000_sumstats.csv")
 
 # Bootstrap sex-quintsoc representation ratios ----------------------------
 #Setting C (CBS)
@@ -1003,6 +1076,72 @@ colnames(aplqssum_output)<-c("mean","2.5","25","50","75","95")
 aplqssum_output<-cbind(aplqssum_output,subcount[,c("sex","quintsoc")])
 #write_csv(aplqs_fin,"./1_data/private/boot_apl_sqs_5000.csv")
 #write_csv(aplqssum_output,"boot_apl_sqs_5000_sumstats.csv")
+
+#Setting G (CLSA)
+#Initialize
+n_replicates<-5000 #number of bootstrap iterations
+collect<-NULL
+
+#Manually add in required dataset as "data" and set up .csv at the bottom (saves computational resources)
+data<-clsa_df
+
+output<-matrix(NA,nrow = n_replicates,
+               ncol = 10)
+
+#Run for CLSA
+set.seed(4)
+for(i in 1:n_replicates){
+  #draw bootstrap resample
+  df<-data[sample(1:nrow(data),size = nrow(data),replace = T),]
+  
+  #calculate counts by subgroup in resample
+  group<-df %>% 
+    filter(!is.na(quintsoc)) %>% 
+    group_by(sex,quintsoc) %>% 
+    summarize(count = n()) %>% 
+    ungroup()
+  
+  #merge resample with corresponding census dataset
+  subcount<-merge(group,g_sqs,by = c("sex","quintsoc"),all.y = TRUE)
+  
+  #calculate proportions and RR
+  subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
+  subcount<-subcount[order(subcount$quintsoc,subcount$sex),]
+  subcount$pct_resample<-c(subcount$count / sum(subcount$count))
+  subcount$pct_pop<-c(subcount$count_census / sum(subcount$count_census))
+  subcount$rr<-subcount$pct_resample / subcount$pct_pop
+  
+  #save output to matrix
+  output[i,]<-subcount$rr
+  print(paste("Run",i,"complete"))
+}
+
+#label columns and make data.frame
+output<-data.frame(output)
+
+#perform calculation and re-assign bootstrap probability to each subgroup combination
+clsaqs_fin<-cbind(subcount[,c("sex","quintsoc")],sapply(output,rrfun))
+colnames(clsaqs_fin)[3]<-"rr_prob"
+clsaqs_fin$cohort<-"CLSA closed cohort"
+
+#calculate summary statistics (quantiles,mean)
+clsaqssum_output<-matrix(NA,nrow = ncol(output),
+                        ncol = 6)
+for(i in 1:ncol(output)){
+  df<-output[,i]
+  col_mean<-mean(df)
+  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.95),
+                       na.rm = T)
+  final<-c(col_mean,col_quants)
+  clsaqssum_output[i,]<-final
+  
+}
+
+clsaqssum_output<-data.frame(clsaqssum_output)
+colnames(clsaqssum_output)<-c("mean","2.5","25","50","75","95")
+clsaqssum_output<-cbind(clsaqssum_output,subcount[,c("sex","quintsoc")])
+#write_csv(clsaqs_fin,"./1_data/private/boot_clsa_sqs_5000.csv")
+#write_csv(clsaqssum_output,"boot_clsa_sqs_5000_sumstats.csv")
 
 # Bootstrap age-sex representation ratios (territories) -------------------
 #Setting F (CCAHS territories)
@@ -1281,7 +1420,6 @@ clsar1sum_output<-cbind(clsar1sum_output,subcount[,c("age_groups","sex","race1")
 #write_csv(clsar1_fin,"./1_data/private/boot_clsa_asr1_5000.csv")
 #write_csv(clsar1sum_output,"boot_clsa_asr1_5000_sumstats.csv")
 
-
 # Sensitivity analysis #2: --------
 #Calculate CLSA and CanPath rep ratios using census datasets that include 
 # indigenous individuals in census counts
@@ -1438,8 +1576,8 @@ clsasums2_output<-data.frame(clsasums2_output)
 colnames(clsasums2_output)<-c("mean","2.5","25","50","75","95")
 clsasums2_output<-cbind(clsasums2_output,subcount[,c("age_groups","sex","urban")])
 
-write_csv(clsa_fins2,"./1_data/private/boot_clsa_asu_5000_s2.csv")
-write_csv(clsasums2_output,"boot_clsa_asu_5000_sumstats_s2.csv")
+#write_csv(clsa_fins2,"./1_data/private/boot_clsa_asu_5000_s2.csv")
+#write_csv(clsasums2_output,"boot_clsa_asu_5000_sumstats_s2.csv")
 
 #Age-sex-race
 #Setting D (CanPath)
@@ -1580,3 +1718,137 @@ colnames(clsarsums2_output)<-c("mean","2.5","25","50","75","95")
 clsarsums2_output<-cbind(clsarsums2_output,subcount[,c("age_groups","sex","race")])
 #write_csv(clsars2_fin,"./1_data/private/boot_clsa_asr_5000_s2.csv")
 #write_csv(clsarsums2_output,"boot_clsa_asr_5000_sumstats_s2.csv")
+
+#Sex-quintmat
+#Setting G (CLSA)
+#Initialize
+n_replicates<-5000 #number of bootstrap iterations
+collect<-NULL
+
+#Manually add in required dataset as "data" and set up .csv at the bottom (saves computational resources)
+data<-clsa_df
+
+output<-matrix(NA,nrow = n_replicates,
+               ncol = 10)
+
+#Run for CLSA
+set.seed(4)
+for(i in 1:n_replicates){
+  #draw bootstrap resample
+  df<-data[sample(1:nrow(data),size = nrow(data),replace = T),]
+  
+  #calculate counts by subgroup in resample
+  group<-df %>% 
+    filter(!is.na(quintmat)) %>% 
+    group_by(sex,quintmat) %>% 
+    summarize(count = n()) %>% 
+    ungroup()
+  
+  #merge resample with corresponding census dataset
+  subcount<-merge(group,g_sqm2,by = c("sex","quintmat"),all.y = TRUE)
+  
+  #calculate proportions and RR
+  subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
+  subcount<-subcount[order(subcount$quintmat,subcount$sex),]
+  subcount$pct_resample<-c(subcount$count / sum(subcount$count))
+  subcount$pct_pop<-c(subcount$count_census / sum(subcount$count_census))
+  subcount$rr<-subcount$pct_resample / subcount$pct_pop
+  
+  #save output to matrix
+  output[i,]<-subcount$rr
+  print(paste("Run",i,"complete"))
+}
+
+#label columns and make data.frame
+output<-data.frame(output)
+
+#perform calculation and re-assign bootstrap probability to each subgroup combination
+clsaqms2_fin<-cbind(subcount[,c("sex","quintmat")],sapply(output,rrfun))
+colnames(clsaqms2_fin)[3]<-"rr_prob"
+clsaqms2_fin$cohort<-"CLSA closed cohort"
+
+#calculate summary statistics (quantiles,mean)
+clsaqms2sum_output<-matrix(NA,nrow = ncol(output),
+                         ncol = 6)
+for(i in 1:ncol(output)){
+  df<-output[,i]
+  col_mean<-mean(df)
+  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.95),
+                       na.rm = T)
+  final<-c(col_mean,col_quants)
+  clsaqms2sum_output[i,]<-final
+  
+}
+
+clsaqms2sum_output<-data.frame(clsaqms2sum_output)
+colnames(clsaqms2sum_output)<-c("mean","2.5","25","50","75","95")
+clsaqms2sum_output<-cbind(clsaqms2sum_output,subcount[,c("sex","quintmat")])
+#write_csv(clsaqms2_fin,"./1_data/private/boot_clsa_sqm_5000_s2.csv")
+#write_csv(clsaqms2sum_output,"boot_clsa_sqm_5000_sumstats_s2.csv")
+
+#Sex-quintsoc
+#Setting G (CLSA)
+#Initialize
+n_replicates<-5000 #number of bootstrap iterations
+collect<-NULL
+
+#Manually add in required dataset as "data" and set up .csv at the bottom (saves computational resources)
+data<-clsa_df
+
+output<-matrix(NA,nrow = n_replicates,
+               ncol = 10)
+
+#Run for CLSA
+set.seed(4)
+for(i in 1:n_replicates){
+  #draw bootstrap resample
+  df<-data[sample(1:nrow(data),size = nrow(data),replace = T),]
+  
+  #calculate counts by subgroup in resample
+  group<-df %>% 
+    filter(!is.na(quintsoc)) %>% 
+    group_by(sex,quintsoc) %>% 
+    summarize(count = n()) %>% 
+    ungroup()
+  
+  #merge resample with corresponding census dataset
+  subcount<-merge(group,g_sqs2,by = c("sex","quintsoc"),all.y = TRUE)
+  
+  #calculate proportions and RR
+  subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
+  subcount<-subcount[order(subcount$quintsoc,subcount$sex),]
+  subcount$pct_resample<-c(subcount$count / sum(subcount$count))
+  subcount$pct_pop<-c(subcount$count_census / sum(subcount$count_census))
+  subcount$rr<-subcount$pct_resample / subcount$pct_pop
+  
+  #save output to matrix
+  output[i,]<-subcount$rr
+  print(paste("Run",i,"complete"))
+}
+
+#label columns and make data.frame
+output<-data.frame(output)
+
+#perform calculation and re-assign bootstrap probability to each subgroup combination
+clsaqss2_fin<-cbind(subcount[,c("sex","quintsoc")],sapply(output,rrfun))
+colnames(clsaqss2_fin)[3]<-"rr_prob"
+clsaqss2_fin$cohort<-"CLSA closed cohort"
+
+#calculate summary statistics (quantiles,mean)
+clsaqss2sum_output<-matrix(NA,nrow = ncol(output),
+                         ncol = 6)
+for(i in 1:ncol(output)){
+  df<-output[,i]
+  col_mean<-mean(df)
+  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.95),
+                       na.rm = T)
+  final<-c(col_mean,col_quants)
+  clsaqss2sum_output[i,]<-final
+  
+}
+
+clsaqss2sum_output<-data.frame(clsaqss2sum_output)
+colnames(clsaqss2sum_output)<-c("mean","2.5","25","50","75","95")
+clsaqss2sum_output<-cbind(clsaqss2sum_output,subcount[,c("sex","quintsoc")])
+#write_csv(clsaqss2_fin,"./1_data/private/boot_clsa_sqs_5000_s2.csv")
+#write_csv(clsaqss2sum_output,"boot_clsa_sqs_5000_sumstats_s2.csv")

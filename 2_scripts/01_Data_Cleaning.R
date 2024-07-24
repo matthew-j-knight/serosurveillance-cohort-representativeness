@@ -30,8 +30,8 @@ dbDisconnect(con)
 cbs_data<-read.csv("./1_data/private/CBS/cbs_unmodified_df_backup_final.csv")
 
 #APL dataset import
-load("./1_data/private/APL/RFD4682e1.RData")
-apl_data<-RFD4682_e1
+load("./1_data/private/APL/RFD4682_ev2.RData")
+apl_data<-RFD4682_ev2
 
 #Ab-C dataset import
 abc_data<-read.csv("./1_data/private/Ab-c/df_047_hs_jha_phases1234.csv")
@@ -185,13 +185,8 @@ cbs_sqs<-cbs_df %>%
 #write_csv(cbs_df,"./1_data/private/cbs_df_final.csv")
 
 # Outpatient Laboratory (APL) ---------------------------------------------
-#Remove duplicate entries and regenerate record ID
-apl_data<-apl_data %>% 
-  filter(order_ID != 1253 & order_ID != 1521 & order_ID != 2728 & order_ID != 3247) %>% 
-  mutate(order_ID = 1:214776)
-
-#Check all participants have a serology result
-nrow(apl_data[is.na(apl_data$`N-IgG_INTERP`) & is.na(apl_data$`RBD-IgGII_INTERP`),]) #0
+#Remove participants missing a serology result (n = 6)
+apl_data<-apl_data[!(is.na(apl_data$`N-IgG_INTERP`) & is.na(apl_data$`RBD-IgGII_INTERP`)),]
 
 #Remove individuals without a unique participant ID
 apl_data<-apl_data[!is.na(apl_data$clean_IDe),]
@@ -223,9 +218,10 @@ apl_data<-apl_data %>%
 #Generate final df
 apl_df<-apl_data %>% 
   select(clean_IDe,age_groups,GENDER,urban,province,month,
-         COLLECTION_DATE,QUINTMAT,QUINTSOC,PAT_FSA)
+         COLLECTION_DATE,QUINTMAT,QUINTSOC,PAT_FSA) %>% 
+  filter(!is.na(age_groups))
 colnames(apl_df)<-c("pid","age_groups","sex","urban","province","month",
-                    "sampledate","quintmat","quintsoc","fsa") #n = 208110
+                    "sampledate","quintmat","quintsoc","fsa") #n = 210905
 
 #Generate counts by age-sex-urban strata
 apl_asu<-apl_df %>% 
@@ -811,7 +807,7 @@ df_all_clsa$sampledate<-as.Date(df_all_clsa$start_datetime_COV,tz = "UTC")
 df_all_clsa$month<-floor_date(df_all_clsa$sampledate,
                               unit = "2 months")
 
-#Impute missing fsas in antibody dataset with fsas from other measurement periods
+#Impute missing fsas/quintmat in antibody dataset with variables from other supplementary datasets
 # (baseline, follow up 1, follow up 2)
 missing_fsa_id<-df_all_clsa[is.na(df_all_clsa$FSA_COVID),"entity_id"] #IDs with missing fsa
 
@@ -829,20 +825,21 @@ df_clsa_baselinet<-read.csv("1_data/private/CLSA/2209005_McGill_ARussell_Baselin
 colnames(df_clsa_baselinet)[2]<-"fsa"
 #Follow up 1
 df_clsa_fup1c<-read.csv("1_data/private/CLSA/2209005_McGill_ARussell_FUP1_CoPv4_Qx_CANUE_PA_BS_CSD_FSA.csv") %>% 
-  select(entity_id,SDC_FSA_COF1) %>% 
-  mutate(measure_t = "fup1") %>% 
-  filter(!is.na(SDC_FSA_COF1))
-colnames(df_clsa_fup1c)[2]<-"fsa"
+  select(entity_id,SDC_FSA_COF1,MSD16_10_COF1,MSD16_11_COF1) %>% 
+  mutate(measure_t = "fup1") #%>% 
+  #filter(!is.na(SDC_FSA_COF1))
+colnames(df_clsa_fup1c)[2:4]<-c("fsa","quintmat","quintsoc")
 df_clsa_fup1t<-read.csv("1_data/private/CLSA/2209005_McGill_ARussell_FUP1_Trav3_Qx_CANUE_FSA_CSD.csv") %>% 
-  select(entity_id,SDC_FSA_TRF1) %>% 
-  mutate(measure_t = "fup1") %>% 
-  filter(!is.na(SDC_FSA_TRF1))
-colnames(df_clsa_fup1t)[2]<-"fsa"
+  select(entity_id,SDC_FSA_TRF1,MSD16_10_TRF1,MSD16_11_TRF1) %>% 
+  mutate(measure_t = "fup1") #%>% 
+  #filter(!is.na(SDC_FSA_TRF1))
+colnames(df_clsa_fup1t)[2:4]<-c("fsa","quintmat","quintsoc")
 #Follow up 2
 df_clsa_fup2c<-read.csv("1_data/private/CLSA/2209005_McGill_ARussell_FUP2_CoPv1_Qx_FSA_CSD.csv") %>% 
   select(entity_id,SDC_FSA_COF2) %>% 
   mutate(measure_t = "fup2") %>% 
-  filter(!is.na(SDC_FSA_COF2))
+  filter(!is.na(SDC_FSA_COF2) & 
+           substr(SDC_FSA_COF2,1,1) %in% LETTERS) #remove 1 blank FSA
 colnames(df_clsa_fup2c)[2]<-"fsa"
 df_clsa_fup2t<-read.csv("1_data/private/CLSA/2209005_McGill_ARussell_FUP2_Trav1_Qx_FSA_CSD.csv") %>% 
   select(entity_id,SDC_FSA_TRF2) %>% 
@@ -850,15 +847,81 @@ df_clsa_fup2t<-read.csv("1_data/private/CLSA/2209005_McGill_ARussell_FUP2_Trav1_
   filter(!is.na(SDC_FSA_TRF2))
 colnames(df_clsa_fup2t)[2]<-"fsa"
 
-#Combine into 1 df.Generate province of residence & urban/rural variables
+#CLSA supplementary dataset data cleaning
+# Check no duplicate IDs in each dataset, fsa formatting, unique values
+
+#Baseline datasets - verified formatted correctly (id, fsa)
+df_clsa_baselinec %>% group_by(entity_id) %>% summarize(count = n()) %>% filter(count > 1) #0
+df_clsa_baselinet %>% group_by(entity_id) %>% summarize(count = n()) %>% filter(count > 1) #0
+lapply(df_clsa_baselinec,unique)
+lapply(df_clsa_baselinet,unique)
+#Check fsa formatting
+which(nchar(df_clsa_baselinec$fsa) != 3)#0
+which(nchar(df_clsa_baselinet$fsa) != 3)#0
+
+#Ensure first and third are capital letters, second is a number between 0-9
+sum((substr(df_clsa_baselinec$fsa,1,1) %in% LETTERS) & 
+      (substr(df_clsa_baselinec$fsa,2,2) %in% c("0","1","2","3","4",
+                                                "5","6","7","8","9")) &
+      (substr(df_clsa_baselinec$fsa,3,3) %in% LETTERS)) == nrow(df_clsa_baselinec) #all formatted correctly
+
+sum((substr(df_clsa_baselinet$fsa,1,1) %in% LETTERS) & 
+      (substr(df_clsa_baselinet$fsa,2,2) %in% c("0","1","2","3","4",
+                                                "5","6","7","8","9")) &
+      (substr(df_clsa_baselinet$fsa,3,3) %in% LETTERS)) == nrow(df_clsa_baselinet) #all formatted correctly
+
+#FUP1
+#datasets - verified formatted correctly (id, fsa,quintmat/quintsoc)
+df_clsa_fup1c %>% group_by(entity_id) %>% summarize(count = n()) %>% filter(count > 1) #0
+df_clsa_fup1t %>% group_by(entity_id) %>% summarize(count = n()) %>% filter(count > 1) #0
+lapply(df_clsa_fup1c,unique)
+lapply(df_clsa_fup1t,unique)
+#Check fsa formatting
+which(nchar(df_clsa_fup1c$fsa) != 3)#0
+which(nchar(df_clsa_fup1t$fsa) != 3)#0
+
+#Ensure first and third are capital letters, second is a number between 0-9
+sum((substr(df_clsa_fup1c$fsa,1,1) %in% LETTERS) & 
+      (substr(df_clsa_fup1c$fsa,2,2) %in% c("0","1","2","3","4",
+                                            "5","6","7","8","9")) &
+      (substr(df_clsa_fup1c$fsa,3,3) %in% LETTERS)) == nrow(df_clsa_fup1c) #all formatted correctly
+
+sum((substr(df_clsa_fup1t$fsa,1,1) %in% LETTERS) & 
+      (substr(df_clsa_fup1t$fsa,2,2) %in% c("0","1","2","3","4",
+                                            "5","6","7","8","9")) &
+      (substr(df_clsa_fup1t$fsa,3,3) %in% LETTERS)) == nrow(df_clsa_fup1t) #all formatted correctly
+
+#FUP2
+#datasets - verified formatted correctly (id, fsa)
+df_clsa_fup2c %>% group_by(entity_id) %>% summarize(count = n()) %>% filter(count > 1) #0
+df_clsa_fup2t %>% group_by(entity_id) %>% summarize(count = n()) %>% filter(count > 1) #0
+lapply(df_clsa_fup2c,unique)
+lapply(df_clsa_fup2t,unique)
+#Check fsa formatting
+which(nchar(df_clsa_fup2c$fsa) != 3)#0
+which(nchar(df_clsa_fup2t$fsa) != 3)#0
+
+#Ensure first and third are capital letters, second is a number between 0-9
+sum((substr(df_clsa_fup2c$fsa,1,1) %in% LETTERS) & 
+      (substr(df_clsa_fup2c$fsa,2,2) %in% c("0","1","2","3","4",
+                                            "5","6","7","8","9")) &
+      (substr(df_clsa_fup2c$fsa,3,3) %in% LETTERS)) == nrow(df_clsa_fup2c) #all formatted correctly
+
+sum((substr(df_clsa_fup2t$fsa,1,1) %in% LETTERS) & 
+      (substr(df_clsa_fup2t$fsa,2,2) %in% c("0","1","2","3","4",
+                                            "5","6","7","8","9")) &
+      (substr(df_clsa_fup2t$fsa,3,3) %in% LETTERS)) == nrow(df_clsa_fup2t) #all formatted correctly
+
+#Combine ids and fsas into 1 df.Generate province of residence & urban/rural variables
 id_fsa_all<-do.call("rbind",list(df_clsa_baselinec,df_clsa_baselinet,
-                                 df_clsa_fup1c,df_clsa_fup1t,
+                                 df_clsa_fup1c[!is.na(df_clsa_fup1c$fsa),c("entity_id","fsa","measure_t")],
+                                 df_clsa_fup1t[!is.na(df_clsa_fup1t$fsa),c("entity_id","fsa","measure_t")],
                                  df_clsa_fup2c,df_clsa_fup2t))
 
 #For ids with multiple different FSAs, take the most recent FSA
 id_fsa_all<-id_fsa_all %>%  
   group_by(entity_id) %>% 
-  arrange(desc(measure_t)) %>% 
+  arrange(desc(measure_t),.by_group = T) %>% 
   slice(1) %>% #select first row of each entity_id group (most recent)
   ungroup()
 
@@ -866,7 +929,7 @@ id_fsa_all$urban_impute<-case_when(substr(id_fsa_all$fsa,2,2) == 0 ~ "Rural",
                                    substr(id_fsa_all$fsa,2,2) %in% 1:9 ~ "Urban",
                                    TRUE ~ NA)
 id_fsa_all$province_impute<-province_fun(id_fsa_all$fsa)
-id_fsa_all<-id_fsa_all[id_fsa_all$entity_id %in% missing_fsa_id,]
+id_fsa_all<-id_fsa_all[id_fsa_all$entity_id %in% missing_fsa_id,] #n = 4187
 
 #Merge baseline, follow up 1, follow up 2 datasets with antibody dataset
 df_all_clsa<-merge(df_all_clsa,id_fsa_all[,c("entity_id","province_impute","urban_impute")],
@@ -878,11 +941,23 @@ df_all_clsa$urban<-ifelse(is.na(df_all_clsa$urban),
                           df_all_clsa$urban_impute,
                           df_all_clsa$urban)
 
+#Merge follow up 1 datasets with id and quintmat/quintsoc to antibody dataset
+fup1<-rbind(df_clsa_fup1c,df_clsa_fup1t)
+df_all_clsa<-merge(df_all_clsa,fup1[,c("entity_id","quintmat","quintsoc")],
+            by = "entity_id",all.x = T)
+
+#Code missing values with NA
+df_all_clsa<-df_all_clsa %>% 
+  mutate(quintmat = ifelse(quintmat == -88888,NA,
+                           quintmat),
+         quintsoc = ifelse(quintsoc == -88888,NA,
+                           quintsoc))
+
 #generate final df
 clsa_df<-df_all_clsa %>% 
   select(entity_id,age_groups,sex,province_anti,urban,race,month,
-         sampledate,SER_AGE_COV,race1) %>% 
-  filter(!is.na(province_anti) & province_anti != "YT")#n = 17310
+         sampledate,SER_AGE_COV,race1,quintmat,quintsoc) %>% 
+  filter(province_anti != "YT")#n = 17310
 colnames(clsa_df)[4]<-"province"
 
 #Generate counts by age-sex-urban strata
@@ -924,6 +999,20 @@ clsa_allr<-clsa_df  %>%
   ungroup()
 clsa_asr<-rbind(clsa_asr,clsa_allr)
 
+#Generate counts by sex-quintmat strata
+clsa_sqm<-clsa_df %>% 
+  filter(!is.na(quintmat)) %>% 
+  group_by(sex,quintmat) %>% 
+  summarize(count = n()) %>% 
+  ungroup()
+
+#Generate counts by sex-quintsoc strata
+clsa_sqs<-clsa_df %>% 
+  filter(!is.na(quintsoc)) %>% 
+  group_by(sex,quintsoc) %>% 
+  summarize(count = n()) %>% 
+  ungroup()
+
 #Sensitivity analysis 1: generate alternative age-sex-race counts when mixed race classified as "White"
 #Generate counts by age-sex-race1 strata
 clsa_asr1<-clsa_df %>% 
@@ -946,6 +1035,8 @@ clsa_asr1<-rbind(clsa_asr1,clsa_allr1)
 #write_csv(clsa_asr,"./1_data/private/clsa_asr_final.csv")
 #write_csv(clsa_df,"./1_data/private/clsa_df_final.csv")
 #write_csv(clsa_asr1,"./1_data/private/clsa_asr1_final.csv")
+#write_csv(clsa_sqm,"./1_data/private/clsa_sqm_final.csv")
+#write_csv(clsa_sqs,"./1_data/private/clsa_sqs_final.csv")
 
 # Probabilistic Survey 3 (CanPath) ------------------------------------------------
 canpath_data<-canpath_data[,c("ResearcherID","C_ADM_STUDY_DATASET","C1_SDC_AGE", "C1_SDC_SEX", "C1_ADM_FSA",
@@ -1285,8 +1376,8 @@ census_e<-do.call("rbind",list(census_e,census_e_all,census_e_alls))
 
 #Setting G: 10 provinces, 47+ (CLSA)
 census_g<-census_alt[[1]] %>%
-  filter(age_groups == "47-56 years" | 
-           age_groups == "57+ years" & 
+  filter((age_groups == "47-56 years" | 
+           age_groups == "57+ years") & 
            province != "NU" & province != "NT" & province != "YT") %>% 
   aggregate(count_census ~ age_groups + sex + urban,
             FUN = sum,
@@ -1365,8 +1456,8 @@ census_dr<-rbind(census_dr,census_dr_all)
 
 #Setting G: 10 provinces, 47+ (CLSA)
 census_gr<-census_alt[[2]] %>%
-  filter(age_groups == "47-56 years" | 
-           age_groups == "57+ years" & 
+  filter((age_groups == "47-56 years" | 
+           age_groups == "57+ years") & 
            province != "NU" & province != "NT" & province != "YT") %>% 
   aggregate(count_census ~ age_groups + sex + race,
             FUN = sum,
@@ -1399,6 +1490,17 @@ census_eqm<-census[[3]] %>%
             drop = F)
 #write_csv(census_eqm,"./1_data/private/2016 Canadian Census/censussqm_e_apl.csv")
 
+#Setting G: CLSA, 47+ (10 provinces)
+census_gqm<-census_alt[[3]] %>% 
+  filter((age_groups == "47-56 years" | 
+           age_groups == "57+ years") & 
+           province != "NU" & province != "NT" & 
+           province != "YT" & quintmat != "All quintiles") %>% 
+  aggregate(count_census ~ sex + quintmat,
+            FUN = sum,
+            drop = F)
+#write_csv(census_gqm,"./1_data/private/2016 Canadian Census/censussqm_g_clsa.csv")
+
 #Census counts by sex-quintsoc
 #Setting B: 10 provinces, all ages (CCAHS)
 
@@ -1420,6 +1522,17 @@ census_eqs<-census[[4]] %>%
             FUN = sum,
             drop = F)
 #write_csv(census_eqs,"./1_data/private/2016 Canadian Census/censussqs_e_apl.csv")
+
+#Setting G: CLSA, 47+ (10 provinces)
+census_gqs<-census_alt[[4]] %>% 
+  filter((age_groups == "47-56 years" | 
+           age_groups == "57+ years") & 
+           province != "NU" & province != "NT" & 
+           province != "YT" & quintsoc != "All quintiles") %>% 
+  aggregate(count_census ~ sex + quintsoc,
+            FUN = sum,
+            drop = F)
+#write_csv(census_gqs,"./1_data/private/2016 Canadian Census/censussqs_g_clsa.csv")
 
 #Sensitivity analysis #2: calculate Canpath and CLSA rep_ratios using
 # census datasets which include indigenous counts
@@ -1449,8 +1562,8 @@ census_ds2<-do.call("rbind",list(census_ds2,census_ds2_all,census_ds2_alls))
 
 #Setting G: 10 provinces, 47+ (CLSA)
 census_gs2<-census[[1]] %>%
-  filter(age_groups == "47-56 years" | 
-           age_groups == "57+ years" & 
+  filter((age_groups == "47-56 years" | 
+           age_groups == "57+ years") & 
            province != "NU" & province != "NT" & province != "YT") %>% 
   aggregate(count_census ~ age_groups + sex + urban,
             FUN = sum,
@@ -1489,8 +1602,8 @@ census_drs2<-rbind(census_drs2,census_drs2_all)
 
 #Setting G: 10 provinces, 47+ (CLSA)
 census_grs2<-census[[2]] %>%
-  filter(age_groups == "47-56 years" | 
-           age_groups == "57+ years" & 
+  filter((age_groups == "47-56 years" | 
+           age_groups == "57+ years") & 
            province != "NU" & province != "NT" & province != "YT") %>% 
   aggregate(count_census ~ age_groups + sex + race,
             FUN = sum,
@@ -1503,6 +1616,29 @@ census_grs2_all$age_groups<-"All ages"
 census_grs2<-rbind(census_grs2,census_grs2_all)
 #write_csv(census_grs2,"./1_data/private/2016 Canadian Census/censusasr_g_clsa_s2.csv")
 
+#Sex-quintmat
+#Setting G: CLSA, 47+ (10 provinces)
+census_gqm2<-census[[3]] %>% 
+  filter((age_groups == "47-56 years" | 
+            age_groups == "57+ years") & 
+           province != "NU" & province != "NT" & 
+           province != "YT" & quintmat != "All quintiles") %>% 
+  aggregate(count_census ~ sex + quintmat,
+            FUN = sum,
+            drop = F)
+#write_csv(census_gqm2,"./1_data/private/2016 Canadian Census/censussqm_g_clsa_s2.csv")
+
+#Sex-quintsoc
+#Setting G: CLSA, 47+ (10 provinces)
+census_gqs2<-census[[4]] %>% 
+  filter((age_groups == "47-56 years" | 
+            age_groups == "57+ years") & 
+           province != "NU" & province != "NT" & 
+           province != "YT" & quintsoc != "All quintiles") %>% 
+  aggregate(count_census ~ sex + quintsoc,
+            FUN = sum,
+            drop = F)
+#write_csv(census_gqs2,"./1_data/private/2016 Canadian Census/censussqs_g_clsa_s2.csv")
 # Create summary table for supplement -------------------------------------
 #Clean variables - need consistent levels (turn all NAs into "missing")
 cbs_dfs<-read.csv("1_data/private/cbs_df_final.csv") %>% 
@@ -1523,10 +1659,8 @@ abc_dfs<-read.csv("1_data/private/abc_df_final.csv") %>%
 abc_dfs[,"race"]<-sup_fun(abc_dfs[,"race"])
 
 clsa_dfs<-read.csv("1_data/private/clsa_df_final.csv") %>% 
-  mutate(cohort = "CLSA closed cohort",
-         quintmat = "Missing",
-         quintsoc = "Missing")
-clsa_dfs[,"race"]<-sup_fun(clsa_dfs[,"race"])
+  mutate(cohort = "CLSA closed cohort")
+clsa_dfs[,c("race","quintmat","quintsoc")]<-lapply(clsa_dfs[,c("race","quintmat","quintsoc")],sup_fun)
 
 can_dfs<-read.csv("1_data/private/can_df_final.csv") %>% 
   mutate(cohort = "Canpath closed cohort",

@@ -113,7 +113,7 @@ can_countasur<-round((nrow(can_asur %>% filter (count > 25)))/nrow(can_asur),2) 
 
 #Collect into a data.frame
 df<-data.frame(Cohort = c("CBS blood donor (1,035,580)",
-                          "APL outpatient laboratory (208,110)",
+                          "APL outpatient laboratory (210,905)",
                           "Ab-C open cohort (25,110)",
                           "CLSA closed cohort (17,310)",
                           "CanPath closed cohort (21,720)"),
@@ -182,7 +182,7 @@ can_countasur1<-round((nrow(can_asur1 %>% filter (count > 25)))/nrow(can_asur1),
 
 #Collect into a data.frame
 df1<-data.frame(Cohort = c("CBS blood donor (1,035,580)",
-                           "APL outpatient laboratory (208,110)",
+                           "APL outpatient laboratory (210,905)",
                            "Ab-C open cohort (25,110)",
                            "CLSA closed cohort (17,310)",
                            "CanPath closed cohort (21,720)"),
