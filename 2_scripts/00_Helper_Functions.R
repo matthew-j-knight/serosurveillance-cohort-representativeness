@@ -174,3 +174,36 @@ sup_fun<-function(x){
   x<-ifelse(is.na(x) | x == "pnts","Missing",x)
   return(x)
 }
+
+#Clean datasets before plotting
+asu_clean<-function(df){
+  df<-df[c(which(df$urban != "All regions" & 
+                   df$age_groups != "All ages"),
+           which(df$urban == "All regions" & 
+                   df$age_groups != "All ages"),
+           which(df$age_groups == "All ages" & 
+                   df$urban != "All regions"),
+           which(df$urban == "All regions" & 
+                   df$age_groups == "All ages")),]
+  df$pct<-c(df[1:24,]$count / sum(df[1:24,]$count,na.rm = T),
+            df[25:36,]$count / sum(df[25:36,]$count,na.rm = T),
+            df[37:40,]$count / sum(df[37:40,]$count),
+            df[41:42,]$count / sum(df[41:42,]$count))
+  return(df)
+}
+
+asu_clean1<-function(df){
+  df<-df[c(which(df$urban != "All regions" & 
+                   df$age_groups != "All ages"),
+           which(df$urban == "All regions" & 
+                   df$age_groups != "All ages"),
+           which(df$age_groups == "All ages" & 
+                   df$urban != "All regions"),
+           which(df$urban == "All regions" & 
+                   df$age_groups == "All ages")),]
+  df$pct_pop<-c(df[1:24,]$count_census / sum(df[1:24,]$count_census,na.rm = T),
+            df[25:36,]$count_census / sum(df[25:36,]$count_census,na.rm = T),
+            df[37:40,]$count_census / sum(df[37:40,]$count_census),
+            df[41:42,]$count_census / sum(df[41:42,]$count_census))
+  return(df)
+}

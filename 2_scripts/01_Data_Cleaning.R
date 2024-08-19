@@ -140,14 +140,20 @@ cbs_allu<-cbs_df %>%
   mutate(age_groups = "All ages") %>% 
   ungroup()
 
-#Generate counts by sex strata and combine
+#Generate counts by age-sex, sex strata and combine
+cbs_asall<-cbs_df %>% 
+  group_by(age_groups,sex) %>% 
+  summarize(count = n()) %>% 
+  mutate(urban = "All regions") %>% 
+  ungroup()
+
 cbs_allsu<-cbs_df %>% 
   group_by(sex) %>% 
   summarize(count = n()) %>% 
   mutate(age_groups = "All ages",
          urban = "All regions") %>% 
   ungroup()
-cbs_asu<-do.call("rbind",list(cbs_asu,cbs_allu,cbs_allsu))
+cbs_asu<-do.call("rbind",list(cbs_asu,cbs_allu,cbs_asall,cbs_allsu))
 
 #Generate counts by age-sex-race strata
 cbs_asr<-cbs_df %>% 
@@ -240,7 +246,14 @@ apl_allu<-apl_df %>%
   mutate(age_groups = "All ages") %>% 
   ungroup()
 
-#Generate counts by sex strata and combine
+#Generate counts by age-sex, sex strata and combine
+apl_asall<-apl_df %>% 
+  filter(sex != "Unknown") %>% 
+  group_by(age_groups,sex) %>% 
+  summarize(count = n()) %>% 
+  mutate(urban = "All regions") %>% 
+  ungroup()
+
 apl_allsu<-apl_df %>% 
   filter(sex != "Unknown") %>% 
   group_by(sex) %>% 
@@ -248,7 +261,7 @@ apl_allsu<-apl_df %>%
   mutate(age_groups = "All ages",
          urban = "All regions") %>% 
   ungroup()
-apl_asu<-do.call("rbind",list(apl_asu,apl_allu,apl_allsu))
+apl_asu<-do.call("rbind",list(apl_asu,apl_allu,apl_asall,apl_allsu))
 
 #Generate counts by sex-quintmat strata
 apl_sqm<-apl_df %>% 
@@ -590,7 +603,14 @@ abc_allu<-abc_df %>%
   mutate(age_groups = "All ages") %>% 
   ungroup()
 
-#Generate counts by sex strata and combine
+#Generate counts by age-sex, sex strata and combine
+abc_asall<-abc_df %>% 
+  filter(province != "YT" & sex != "Self described") %>% 
+  group_by(age_groups,sex) %>% 
+  summarize(count = n()) %>% 
+  mutate(urban = "All regions") %>% 
+  ungroup()
+
 abc_allsu<-abc_df %>% 
   filter(province != "YT" & sex != "Self described") %>% 
   group_by(sex) %>% 
@@ -598,7 +618,7 @@ abc_allsu<-abc_df %>%
   mutate(age_groups = "All ages",
          urban = "All regions") %>% 
   ungroup()
-abc_asu<-do.call("rbind",list(abc_asu,abc_allu,abc_allsu))
+abc_asu<-do.call("rbind",list(abc_asu,abc_allu,abc_asall,abc_allsu))
 
 #Generate counts by age-sex-race strata
 abc_asr<-abc_df %>% 
@@ -973,14 +993,20 @@ clsa_allu<-clsa_df %>%
   mutate(age_groups = "All ages") %>% 
   ungroup()
 
-#Generate counts by sex strata and combine
+#Generate counts by age-sex, sex strata and combine
+clsa_asall<-clsa_df %>% 
+  group_by(age_groups,sex) %>% 
+  summarize(count = n()) %>% 
+  mutate(urban = "All regions") %>% 
+  ungroup()
+
 clsa_allsu<-clsa_df %>% 
   group_by(sex) %>% 
   summarize(count = n()) %>% 
   mutate(age_groups = "All ages",
          urban = "All regions") %>% 
   ungroup()
-clsa_asu<-do.call("rbind",list(clsa_asu,clsa_allu,clsa_allsu))
+clsa_asu<-do.call("rbind",list(clsa_asu,clsa_allu,clsa_asall,clsa_allsu))
 
 #Counts by age-sex-race
 #Generate counts by age-sex-race strata
@@ -1228,14 +1254,20 @@ can_allu<-can_df %>%
   mutate(age_groups = "All ages") %>% 
   ungroup()
 
-#Generate counts by sex strata and combine
+#Generate counts by age-sex, sex strata and combine
+can_asall<-can_df %>% 
+  group_by(age_groups,sex) %>% 
+  summarize(count = n()) %>% 
+  mutate(urban = "All regions") %>% 
+  ungroup()
+
 can_allsu<-can_df %>% 
   group_by(sex) %>% 
   summarize(count = n()) %>% 
   mutate(age_groups = "All ages",
          urban = "All regions") %>% 
   ungroup()
-can_asu<-do.call("rbind",list(can_asu,can_allu,can_allsu))
+can_asu<-do.call("rbind",list(can_asu,can_allu,can_asall,can_allsu))
 
 #Generate counts by age-sex-race strata
 can_asr<-can_df %>% 
@@ -1296,13 +1328,19 @@ census_a_all<-census_a %>%
             drop = F)
 census_a_all$age_groups<-"All ages"
 
+census_a_allu<-census_a %>% 
+  aggregate(count_census ~ age_groups + sex,
+            FUN = sum,
+            drop = F) %>% 
+  mutate(urban = "All regions")
+
 census_a_alls<-census_a %>% 
   aggregate(count_census ~ sex,
             FUN = sum,
             drop = F) %>% 
   mutate(age_groups = "All ages",
          urban = "All regions")
-census_a<-do.call("rbind",list(census_a,census_a_all,census_a_alls))
+census_a<-do.call("rbind",list(census_a,census_a_all,census_a_allu,census_a_alls))
 #write_csv(census_a,"./1_data/private/2016 Canadian Census/censusasu_a_abc.csv")
 
 #Setting B: 10 provinces, all ages (CCAHS)
@@ -1321,13 +1359,19 @@ census_c_all<-census_c %>%
             drop = F)
 census_c_all$age_groups<-"All ages"
 
+census_c_allu<-census_c %>% 
+  aggregate(count_census ~ age_groups + sex,
+            FUN = sum,
+            drop = F) %>% 
+  mutate(urban = "All regions")
+
 census_c_alls<-census_c %>% 
   aggregate(count_census ~ sex,
             FUN = sum,
             drop = F) %>% 
   mutate(age_groups = "All ages",
          urban = "All regions")
-census_c<-do.call("rbind",list(census_c,census_c_all,census_c_alls))
+census_c<-do.call("rbind",list(census_c,census_c_all,census_c_allu,census_c_alls))
 #write_csv(census_c,"./1_data/private/2016 Canadian Census/censusasu_c_cbs.csv")
 
 #Setting D: 9 provinces (no Saskatchewan), 18+ (Canpath)
@@ -1344,13 +1388,19 @@ census_d_all<-census_d %>%
             drop = F)
 census_d_all$age_groups<-"All ages"
 
+census_d_allu<-census_d %>% 
+  aggregate(count_census ~ age_groups + sex,
+            FUN = sum,
+            drop = F) %>% 
+  mutate(urban = "All regions")
+
 census_d_alls<-census_d %>% 
   aggregate(count_census ~ sex,
             FUN = sum,
             drop = F) %>% 
   mutate(age_groups = "All ages",
          urban = "All regions")
-census_d<-do.call("rbind",list(census_d,census_d_all,census_d_alls))
+census_d<-do.call("rbind",list(census_d,census_d_all,census_d_allu,census_d_alls))
 #write_csv(census_d,"./1_data/private/2016 Canadian Census/censusasu_d_canpath.csv")
 
 #Setting E: Alberta, all ages (APL)
@@ -1365,13 +1415,19 @@ census_e_all<-census_e %>%
             drop = F)
 census_e_all$age_groups<-"All ages"
 
+census_e_allu<-census_e %>% 
+  aggregate(count_census ~ age_groups + sex,
+            FUN = sum,
+            drop = F) %>% 
+  mutate(urban = "All regions")
+
 census_e_alls<-census_e %>% 
   aggregate(count_census ~ sex,
             FUN = sum,
             drop = F) %>% 
   mutate(age_groups = "All ages",
          urban = "All regions")
-census_e<-do.call("rbind",list(census_e,census_e_all,census_e_alls))
+census_e<-do.call("rbind",list(census_e,census_e_all,census_e_allu,census_e_alls))
 #write_csv(census_e,"./1_data/private/2016 Canadian Census/censusasu_e_apl.csv")
 
 #Setting G: 10 provinces, 47+ (CLSA)
@@ -1388,13 +1444,19 @@ census_g_all<-census_g %>%
             drop = F)
 census_g_all$age_groups<-"All ages"
 
+census_g_allu<-census_g %>% 
+  aggregate(count_census ~ age_groups + sex,
+            FUN = sum,
+            drop = F) %>% 
+  mutate(urban = "All regions")
+
 census_g_alls<-census_g %>% 
   aggregate(count_census ~ sex,
             FUN = sum,
             drop = F) %>% 
   mutate(age_groups = "All ages",
          urban = "All regions")
-census_g<-do.call("rbind",list(census_g,census_g_all,census_g_alls))
+census_g<-do.call("rbind",list(census_g,census_g_all,census_g_allu,census_g_alls))
 #write_csv(census_g,"./1_data/private/2016 Canadian Census/censusasu_g_clsa.csv")
 
 #Setting H: Yukon, 18+ (Ab-c, age-sex)
@@ -1551,13 +1613,19 @@ census_ds2_all<-census_ds2 %>%
             drop = F)
 census_ds2_all$age_groups<-"All ages"
 
+census_ds2_allu<-census_ds2 %>% 
+  aggregate(count_census ~ age_groups + sex,
+            FUN = sum,
+            drop = F) %>% 
+  mutate(urban = "All regions")
+
 census_ds2_alls<-census_ds2 %>% 
   aggregate(count_census ~ sex,
             FUN = sum,
             drop = F) %>% 
   mutate(age_groups = "All ages",
          urban = "All regions")
-census_ds2<-do.call("rbind",list(census_ds2,census_ds2_all,census_ds2_alls))
+census_ds2<-do.call("rbind",list(census_ds2,census_ds2_all,census_ds2_allu,census_ds2_alls))
 #write_csv(census_ds2,"./1_data/private/2016 Canadian Census/censusasu_d_canpath_s2.csv")
 
 #Setting G: 10 provinces, 47+ (CLSA)
@@ -1574,13 +1642,19 @@ census_gs2_all<-census_gs2 %>%
             drop = F)
 census_gs2_all$age_groups<-"All ages"
 
+census_gs2_allu<-census_gs2 %>% 
+  aggregate(count_census ~ age_groups + sex,
+            FUN = sum,
+            drop = F) %>% 
+  mutate(urban = "All regions")
+
 census_gs2_alls<-census_gs2 %>% 
   aggregate(count_census ~ sex,
             FUN = sum,
             drop = F) %>% 
   mutate(age_groups = "All ages",
          urban = "All regions")
-census_gs2<-do.call("rbind",list(census_gs2,census_gs2_all,census_gs2_alls))
+census_gs2<-do.call("rbind",list(census_gs2,census_gs2_all,census_gs2_allu,census_gs2_alls))
 #write_csv(census_gs2,"./1_data/private/2016 Canadian Census/censusasu_g_clsa_s2.csv")
 
 #Age-sex-race

@@ -64,7 +64,7 @@ collect<-NULL
 
 data<-abc_df[abc_df$province != "YT",]
 output<-matrix(NA,nrow = n_replicates,
-               ncol = 26)
+               ncol = 36)
 
 #Run
 set.seed(4)
@@ -83,7 +83,14 @@ for(i in 1:n_replicates){
   alt<-aggregate(group,count ~ sex + urban, FUN = sum, drop = F)
   alt$age_groups<-"All ages"
   
-  #across all age and urban categories
+  #across urban, and age-urban categories
+  alt1_allu<-df %>% 
+    filter(sex != "Self described") %>%
+    group_by(age_groups,sex) %>% 
+    summarize(count = n()) %>% 
+    mutate(urban = "All regions") %>% 
+    ungroup()
+  
   alt1_allsu<-df %>% 
     filter(sex != "Self described") %>% 
     group_by(sex) %>% 
@@ -92,16 +99,29 @@ for(i in 1:n_replicates){
            urban = "All regions") %>% 
     ungroup()
   
-  group<-do.call("rbind",list(group,alt,alt1_allsu))
+  group<-do.call("rbind",list(group,alt,alt1_allu,alt1_allsu))
   
   #merge resample with corresponding census dataset
   subcount<-merge(group,a_asu,by = c("age_groups","sex","urban"),all.y = T)
   
   #calculate proportions and RR
   subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
-  subcount<-subcount[order(subcount$age_groups,subcount$sex,subcount$urban),]
-  subcount$pct_resample<-c(subcount$count / sum(subcount$count[1:20]))
-  subcount$pct_pop<-c(subcount$count_census / sum(subcount$count_census[1:20]))
+  subcount<-subcount[c(which(subcount$urban != "All regions" & 
+                               subcount$age_groups != "All ages"),
+                       which(subcount$urban == "All regions" & 
+                               subcount$age_groups != "All ages"),
+                       which(subcount$age_groups == "All ages" & 
+                               subcount$urban != "All regions"),
+                       which(subcount$urban == "All regions" & 
+                               subcount$age_groups == "All ages")),]
+  subcount$pct_resample<-c(subcount[1:20,]$count / sum(subcount[1:20,]$count),
+                           subcount[21:30,]$count / sum(subcount[21:30,]$count),
+                           subcount[31:34,]$count / sum(subcount[31:34,]$count),
+                           subcount[35:36,]$count / sum(subcount[35:36,]$count))
+  subcount$pct_pop<-c(subcount[1:20,]$count_census / sum(subcount[1:20,]$count_census),
+                      subcount[21:30,]$count_census / sum(subcount[21:30,]$count_census),
+                      subcount[31:34,]$count_census / sum(subcount[31:34,]$count_census),
+                      subcount[35:36,]$count_census / sum(subcount[35:36,]$count_census))
   subcount$rr<-subcount$pct_resample / subcount$pct_pop
   
   #save output to matrix
@@ -111,6 +131,14 @@ for(i in 1:n_replicates){
 
 #label columns and make data.frame
 output<-data.frame(output)
+
+#Assign column names
+string<-c()
+for(i in 1:nrow(subcount)){
+  s_i<-paste(subcount[i,"age_groups"],subcount[i,"sex"],subcount[i,"urban"],sep = "-")
+  string<-c(string,s_i)
+}
+colnames(output)<-string
 
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 abc_fin<-cbind(subcount[,c("age_groups","sex","urban")],sapply(output,rrfun))
@@ -146,7 +174,7 @@ collect<-NULL
 
 data<-cbs_df
 output<-matrix(NA,nrow = n_replicates,
-               ncol = 26)
+               ncol = 36)
 
 #Run
 set.seed(4)
@@ -165,7 +193,13 @@ for(i in 1:n_replicates){
   alt<-aggregate(group,count ~ sex + urban, FUN = sum, drop = F)
   alt$age_groups<-"All ages"
   
-  #across all age and urban categories
+  #across urban, and age-urban categories
+  alt1_allu<-df %>% 
+    group_by(age_groups,sex) %>% 
+    summarize(count = n()) %>% 
+    mutate(urban = "All regions") %>% 
+    ungroup()
+  
   alt1_allsu<-df %>% 
     group_by(sex) %>% 
     summarize(count = n()) %>% 
@@ -173,16 +207,29 @@ for(i in 1:n_replicates){
            urban = "All regions") %>% 
     ungroup()
   
-  group<-do.call("rbind",list(group,alt,alt1_allsu))
+  group<-do.call("rbind",list(group,alt,alt1_allu,alt1_allsu))
   
   #merge resample with corresponding census dataset
   subcount<-merge(group,c_asu,by = c("age_groups","sex","urban"),all.y = T)
   
   #calculate proportions and RR
   subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
-  subcount<-subcount[order(subcount$age_groups,subcount$sex,subcount$urban),]
-  subcount$pct_resample<-c(subcount$count / sum(subcount$count[1:20]))
-  subcount$pct_pop<-c(subcount$count_census / sum(subcount$count_census[1:20]))
+  subcount<-subcount[c(which(subcount$urban != "All regions" & 
+                              subcount$age_groups != "All ages"),
+  which(subcount$urban == "All regions" & 
+          subcount$age_groups != "All ages"),
+  which(subcount$age_groups == "All ages" & 
+          subcount$urban != "All regions"),
+  which(subcount$urban == "All regions" & 
+          subcount$age_groups == "All ages")),]
+  subcount$pct_resample<-c(subcount[1:20,]$count / sum(subcount[1:20,]$count),
+                           subcount[21:30,]$count / sum(subcount[21:30,]$count),
+                           subcount[31:34,]$count / sum(subcount[31:34,]$count),
+                           subcount[35:36,]$count / sum(subcount[35:36,]$count))
+  subcount$pct_pop<-c(subcount[1:20,]$count_census / sum(subcount[1:20,]$count_census),
+                      subcount[21:30,]$count_census / sum(subcount[21:30,]$count_census),
+                      subcount[31:34,]$count_census / sum(subcount[31:34,]$count_census),
+                      subcount[35:36,]$count_census / sum(subcount[35:36,]$count_census))
   subcount$rr<-subcount$pct_resample / subcount$pct_pop
   
   #save output to matrix
@@ -192,6 +239,14 @@ for(i in 1:n_replicates){
 
 #label columns and make data.frame
 output<-data.frame(output)
+
+#Assign column names
+string<-c()
+for(i in 1:nrow(subcount)){
+  s_i<-paste(subcount[i,"age_groups"],subcount[i,"sex"],subcount[i,"urban"],sep = "-")
+  string<-c(string,s_i)
+}
+colnames(output)<-string
 
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 cbs_fin<-cbind(subcount[,c("age_groups","sex","urban")],sapply(output,rrfun))
@@ -217,7 +272,7 @@ cbssum_output<-cbind(cbssum_output,subcount[,c("age_groups","sex","urban")])
 
 write_csv(output,"./1_data/private/boot_cbs_asu_5000_rr.csv")
 write_csv(cbs_fin,"./1_data/private/boot_cbs_asu_5000.csv")
-write_csv(cbssum_output,"./1_data/private/boot_csb_asu_5000_sumstats.csv")
+write_csv(cbssum_output,"./1_data/private/boot_cbs_asu_5000_sumstats.csv")
 
 #Setting D (CanPath)
 n_replicates<-5000 #number of bootstrap iterations
@@ -226,7 +281,7 @@ collect<-NULL
 #Manually add in required dataset as "data" and set up .csv at the bottom (saves computational resources)
 data<-can_df
 output<-matrix(NA,nrow = n_replicates,
-               ncol = 26)
+               ncol = 36)
 
 #Run
 set.seed(4)
@@ -244,7 +299,13 @@ for(i in 1:n_replicates){
   alt<-aggregate(group,count ~ sex + urban, FUN = sum, drop = F)
   alt$age_groups<-"All ages"
   
-  #across all age and urban categories
+  #across urban, and age-urban categories
+  alt1_allu<-df %>% 
+    group_by(age_groups,sex) %>% 
+    summarize(count = n()) %>% 
+    mutate(urban = "All regions") %>% 
+    ungroup()
+  
   alt1_allsu<-df %>% 
     group_by(sex) %>% 
     summarize(count = n()) %>% 
@@ -252,16 +313,29 @@ for(i in 1:n_replicates){
            urban = "All regions") %>% 
     ungroup()
   
-  group<-do.call("rbind",list(group,alt,alt1_allsu))
+  group<-do.call("rbind",list(group,alt,alt1_allu,alt1_allsu))
   
   #merge resample with corresponding census dataset
   subcount<-merge(group,d_asu,by = c("age_groups","sex","urban"),all.y = T)
   
   #calculate proportions and RR
   subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
-  subcount<-subcount[order(subcount$age_groups,subcount$sex,subcount$urban),]
-  subcount$pct_resample<-c(subcount$count / sum(subcount$count[1:20]))
-  subcount$pct_pop<-c(subcount$count_census / sum(subcount$count_census[1:20]))
+  subcount<-subcount[c(which(subcount$urban != "All regions" & 
+                               subcount$age_groups != "All ages"),
+                       which(subcount$urban == "All regions" & 
+                               subcount$age_groups != "All ages"),
+                       which(subcount$age_groups == "All ages" & 
+                               subcount$urban != "All regions"),
+                       which(subcount$urban == "All regions" & 
+                               subcount$age_groups == "All ages")),]
+  subcount$pct_resample<-c(subcount[1:20,]$count / sum(subcount[1:20,]$count),
+                           subcount[21:30,]$count / sum(subcount[21:30,]$count),
+                           subcount[31:34,]$count / sum(subcount[31:34,]$count),
+                           subcount[35:36,]$count / sum(subcount[35:36,]$count))
+  subcount$pct_pop<-c(subcount[1:20,]$count_census / sum(subcount[1:20,]$count_census),
+                      subcount[21:30,]$count_census / sum(subcount[21:30,]$count_census),
+                      subcount[31:34,]$count_census / sum(subcount[31:34,]$count_census),
+                      subcount[35:36,]$count_census / sum(subcount[35:36,]$count_census))
   subcount$rr<-subcount$pct_resample / subcount$pct_pop
   
   #save output to matrix
@@ -271,6 +345,14 @@ for(i in 1:n_replicates){
 
 #label columns and make data.frame
 output<-data.frame(output)
+
+#Assign column names
+string<-c()
+for(i in 1:nrow(subcount)){
+  s_i<-paste(subcount[i,"age_groups"],subcount[i,"sex"],subcount[i,"urban"],sep = "-")
+  string<-c(string,s_i)
+}
+colnames(output)<-string
 
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 can_fin<-cbind(subcount[,c("age_groups","sex","urban")],sapply(output,rrfun))
@@ -303,7 +385,7 @@ collect<-NULL
 data<-apl_df
 
 output<-matrix(NA,nrow = n_replicates,
-               ncol = 30)
+               ncol = 42)
 
 set.seed(4)
 for(i in 1:n_replicates){
@@ -322,7 +404,14 @@ for(i in 1:n_replicates){
   alt<-aggregate(group,count ~ sex + urban, FUN = sum, drop = F)
   alt$age_groups<-"All ages"
   
-  #across all age and urban categories
+  #across urban, and age-urban categories
+  alt1_allu<-df %>% 
+    filter(sex != "Unknown") %>%
+    group_by(age_groups,sex) %>% 
+    summarize(count = n()) %>% 
+    mutate(urban = "All regions") %>% 
+    ungroup()
+  
   alt1_allsu<-df %>% 
     filter(sex != "Unknown") %>% 
     group_by(sex) %>% 
@@ -331,16 +420,29 @@ for(i in 1:n_replicates){
            urban = "All regions") %>% 
     ungroup()
   
-  group<-do.call("rbind",list(group,alt,alt1_allsu))
+  group<-do.call("rbind",list(group,alt,alt1_allu,alt1_allsu))
   
   #merge resample with corresponding census dataset
   subcount<-merge(group,e_asu,by = c("age_groups","sex","urban"),all.y = T)
   
   #calculate proportions and RR
   subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
-  subcount<-subcount[order(subcount$age_groups,subcount$sex,subcount$urban),]
-  subcount$pct_resample<-c(subcount$count / sum(subcount$count[1:24]))
-  subcount$pct_pop<-c(subcount$count_census / sum(subcount$count_census[1:24]))
+  subcount<-subcount[c(which(subcount$urban != "All regions" & 
+                               subcount$age_groups != "All ages"),
+                       which(subcount$urban == "All regions" & 
+                               subcount$age_groups != "All ages"),
+                       which(subcount$age_groups == "All ages" & 
+                               subcount$urban != "All regions"),
+                       which(subcount$urban == "All regions" & 
+                               subcount$age_groups == "All ages")),]
+  subcount$pct_resample<-c(subcount[1:24,]$count / sum(subcount[1:24,]$count),
+                           subcount[25:36,]$count / sum(subcount[25:36,]$count),
+                           subcount[37:40,]$count / sum(subcount[37:40,]$count),
+                           subcount[41:42,]$count / sum(subcount[41:42,]$count))
+  subcount$pct_pop<-c(subcount[1:24,]$count_census / sum(subcount[1:24,]$count_census),
+                      subcount[25:36,]$count_census / sum(subcount[25:36,]$count_census),
+                      subcount[37:40,]$count_census / sum(subcount[37:40,]$count_census),
+                      subcount[41:42,]$count_census / sum(subcount[41:42,]$count_census))
   subcount$rr<-subcount$pct_resample / subcount$pct_pop
   
   #save output to matrix
@@ -350,6 +452,14 @@ for(i in 1:n_replicates){
 
 #label columns and make data.frame
 output<-data.frame(output)
+
+#Assign column names
+string<-c()
+for(i in 1:nrow(subcount)){
+  s_i<-paste(subcount[i,"age_groups"],subcount[i,"sex"],subcount[i,"urban"],sep = "-")
+  string<-c(string,s_i)
+}
+colnames(output)<-string
 
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 apl_fin<-cbind(subcount[,c("age_groups","sex","urban")],sapply(output,rrfun))
@@ -386,7 +496,7 @@ collect<-NULL
 #Manually add in required dataset as "data" and set up .csv at the bottom (saves computational resources)
 data<-clsa_df
 output<-matrix(NA,nrow = n_replicates,
-               ncol = 14)
+               ncol = 18)
 
 #Run
 set.seed(4)
@@ -404,7 +514,13 @@ for(i in 1:n_replicates){
   alt<-aggregate(group,count ~ sex + urban, FUN = sum, drop = F)
   alt$age_groups<-"All ages"
   
-  #across all age and urban categories
+  #across urban, and age-urban categories
+  alt1_allu<-df %>% 
+    group_by(age_groups,sex) %>% 
+    summarize(count = n()) %>% 
+    mutate(urban = "All regions") %>% 
+    ungroup()
+  
   alt1_allsu<-df %>% 
     group_by(sex) %>% 
     summarize(count = n()) %>% 
@@ -412,16 +528,29 @@ for(i in 1:n_replicates){
            urban = "All regions") %>% 
     ungroup()
   
-  group<-do.call("rbind",list(group,alt,alt1_allsu))
+  group<-do.call("rbind",list(group,alt,alt1_allu,alt1_allsu))
   
   #merge resample with corresponding census dataset
   subcount<-merge(group,g_asu,by = c("age_groups","sex","urban"),all.y = T)
   
   #calculate proportions and RR
   subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
-  subcount<-subcount[order(subcount$age_groups,subcount$sex,subcount$urban),]
-  subcount$pct_resample<-c(subcount$count / sum(subcount$count[1:8]))
-  subcount$pct_pop<-c(subcount$count_census / sum(subcount$count_census[1:8]))
+  subcount<-subcount[c(which(subcount$urban != "All regions" & 
+                               subcount$age_groups != "All ages"),
+                       which(subcount$urban == "All regions" & 
+                               subcount$age_groups != "All ages"),
+                       which(subcount$age_groups == "All ages" & 
+                               subcount$urban != "All regions"),
+                       which(subcount$urban == "All regions" & 
+                               subcount$age_groups == "All ages")),]
+  subcount$pct_resample<-c(subcount[1:8,]$count / sum(subcount[1:8,]$count),
+                           subcount[9:12,]$count / sum(subcount[9:12,]$count),
+                           subcount[13:16,]$count / sum(subcount[13:16,]$count),
+                           subcount[17:18,]$count / sum(subcount[17:18,]$count))
+  subcount$pct_pop<-c(subcount[1:8,]$count_census / sum(subcount[1:8,]$count_census),
+                      subcount[9:12,]$count_census / sum(subcount[9:12,]$count_census),
+                      subcount[13:16,]$count_census / sum(subcount[13:16,]$count_census),
+                      subcount[17:18,]$count_census / sum(subcount[17:18,]$count_census))
   subcount$rr<-subcount$pct_resample / subcount$pct_pop
   
   #save output to matrix
@@ -431,6 +560,14 @@ for(i in 1:n_replicates){
 
 #label columns and make data.frame
 output<-data.frame(output)
+
+#Assign column names
+string<-c()
+for(i in 1:nrow(subcount)){
+  s_i<-paste(subcount[i,"age_groups"],subcount[i,"sex"],subcount[i,"urban"],sep = "-")
+  string<-c(string,s_i)
+}
+colnames(output)<-string
 
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 clsa_fin<-cbind(subcount[,c("age_groups","sex","urban")],sapply(output,rrfun))
@@ -506,6 +643,14 @@ for(i in 1:n_replicates){
 #label columns and make data.frame
 output<-data.frame(output)
 
+#Assign column names
+string<-c()
+for(i in 1:nrow(subcount)){
+  s_i<-paste(subcount[i,"age_groups"],subcount[i,"sex"],subcount[i,"race"],sep = "-")
+  string<-c(string,s_i)
+}
+colnames(output)<-string
+
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 abcr_fin<-cbind(subcount[,c("age_groups","sex","race")],sapply(output,rrfun))
 colnames(abcr_fin)[4]<-"rr_prob"
@@ -528,8 +673,9 @@ abcrsum_output<-data.frame(abcrsum_output)
 colnames(abcrsum_output)<-c("mean","2.5","25","50","75","95")
 abcrsum_output<-cbind(abcrsum_output,subcount[,c("age_groups","sex","race")])
 
-#write_csv(abcr_fin,"./1_data/private/boot_abc_asr_5000.csv")
-#write_csv(abcrsum_output,"boot_abc_asr_5000_sumstats.csv")
+write_csv(output,"./1_data/private/boot_abc_asr_5000_rr.csv")
+write_csv(abcr_fin,"./1_data/private/boot_abc_asr_5000.csv")
+write_csv(abcrsum_output,"./1_data/boot_abc_asr_5000_sumstats.csv")
 
 #Setting B (CCAHS)
 
@@ -578,6 +724,14 @@ for(i in 1:n_replicates){
 #label columns and make data.frame
 output<-data.frame(output)
 
+#Assign column names
+string<-c()
+for(i in 1:nrow(subcount)){
+  s_i<-paste(subcount[i,"age_groups"],subcount[i,"sex"],subcount[i,"race"],sep = "-")
+  string<-c(string,s_i)
+}
+colnames(output)<-string
+
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 cbsr_fin<-cbind(subcount[,c("age_groups","sex","race")],sapply(output,rrfun))
 colnames(cbsr_fin)[4]<-"rr_prob"
@@ -600,8 +754,9 @@ cbsrsum_output<-data.frame(cbsrsum_output)
 colnames(cbsrsum_output)<-c("mean","2.5","25","50","75","95")
 cbsrsum_output<-cbind(cbsrsum_output,subcount[,c("age_groups","sex","race")])
 
-#write_csv(cbsr_fin,"./1_data/private/boot_cbs_asr_5000.csv")
-#write_csv(cbsrsum_output,"boot_cbs_asr_5000_sumstats.csv")
+write_csv(output,"./1_data/private/boot_cbs_asr_5000_rr.csv")
+write_csv(cbsr_fin,"./1_data/private/boot_cbs_asr_5000.csv")
+write_csv(cbsrsum_output,"./1_data/private/boot_cbs_asr_5000_sumstats.csv")
 
 #Setting D (CanPath)
 n_replicates<-5000 #number of bootstrap iterations
@@ -648,6 +803,14 @@ for(i in 1:n_replicates){
 #label columns and make data.frame
 output<-data.frame(output)
 
+#Assign column names
+string<-c()
+for(i in 1:nrow(subcount)){
+  s_i<-paste(subcount[i,"age_groups"],subcount[i,"sex"],subcount[i,"race"],sep = "-")
+  string<-c(string,s_i)
+}
+colnames(output)<-string
+
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 canr_fin<-cbind(subcount[,c("age_groups","sex","race")],sapply(output,rrfun))
 colnames(canr_fin)[4]<-"rr_prob"
@@ -669,8 +832,10 @@ for(i in 1:ncol(output)){
 canrsum_output<-data.frame(canrsum_output)
 colnames(canrsum_output)<-c("mean","2.5","25","50","75","95")
 canrsum_output<-cbind(canrsum_output,subcount[,c("age_groups","sex","race")])
-#write_csv(canr_fin,"./1_data/private/boot_can_asr_5000.csv")
-#write_csv(canrsum_output,"boot_can_asr_5000_sumstats.csv")
+
+write_csv(output,"./1_data/private/boot_can_asr_5000_rr.csv")
+write_csv(canr_fin,"./1_data/private/boot_can_asr_5000.csv")
+write_csv(canrsum_output,"./1_data/private/boot_can_asr_5000_sumstats.csv")
 
 #Setting F (CCAHS territories)
 
@@ -720,6 +885,14 @@ for(i in 1:n_replicates){
 #label columns and make data.frame
 output<-data.frame(output)
 
+#Assign column names
+string<-c()
+for(i in 1:nrow(subcount)){
+  s_i<-paste(subcount[i,"age_groups"],subcount[i,"sex"],subcount[i,"race"],sep = "-")
+  string<-c(string,s_i)
+}
+colnames(output)<-string
+
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 clsar_fin<-cbind(subcount[,c("age_groups","sex","race")],sapply(output,rrfun))
 colnames(clsar_fin)[4]<-"rr_prob"
@@ -741,8 +914,10 @@ for(i in 1:ncol(output)){
 clsarsum_output<-data.frame(clsarsum_output)
 colnames(clsarsum_output)<-c("mean","2.5","25","50","75","95")
 clsarsum_output<-cbind(clsarsum_output,subcount[,c("age_groups","sex","race")])
-#write_csv(clsar_fin,"./1_data/private/boot_clsa_asr_5000.csv")
-#write_csv(clsarsum_output,"boot_clsa_asr_5000_sumstats.csv")
+
+write_csv(output,"./1_data/private/boot_clsa_asr_5000_rr.csv")
+write_csv(clsar_fin,"./1_data/private/boot_clsa_asr_5000.csv")
+write_csv(clsarsum_output,"./1_data/private/boot_clsa_asr_5000_sumstats.csv")
 
 # Bootstrap sex-quintmat representation ratios ----------------------------
 
@@ -788,6 +963,14 @@ for(i in 1:n_replicates){
 #label columns and make data.frame
 output<-data.frame(output)
 
+#Assign column names
+string<-c()
+for(i in 1:nrow(subcount)){
+  s_i<-paste(subcount[i,"sex"],subcount[i,"quintmat"],sep = "-")
+  string<-c(string,s_i)
+}
+colnames(output)<-string
+
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 cbsqm_fin<-cbind(subcount[,c("sex","quintmat")],sapply(output,rrfun))
 colnames(cbsqm_fin)[3]<-"rr_prob"
@@ -809,8 +992,10 @@ for(i in 1:ncol(output)){
 cbsqmsum_output<-data.frame(cbsqmsum_output)
 colnames(cbsqmsum_output)<-c("mean","2.5","25","50","75","95")
 cbsqmsum_output<-cbind(cbsqmsum_output,subcount[,c("sex","quintmat")])
-#write_csv(cbsqm_fin,"./1_data/private/boot_cbs_sqm_5000.csv")
-#write_csv(cbsqmsum_output,"boot_cbs_sqm_5000_sumstats.csv")
+
+write_csv(output,"./1_data/private/boot_cbs_sqm_5000_rr.csv")
+write_csv(cbsqm_fin,"./1_data/private/boot_cbs_sqm_5000.csv")
+write_csv(cbsqmsum_output,"./1_data/private/boot_cbs_sqm_5000_sumstats.csv")
 
 #Setting E (APL)
 #Initialize
@@ -854,6 +1039,14 @@ for(i in 1:n_replicates){
 #label columns and make data.frame
 output<-data.frame(output)
 
+#Assign column names
+string<-c()
+for(i in 1:nrow(subcount)){
+  s_i<-paste(subcount[i,"sex"],subcount[i,"quintmat"],sep = "-")
+  string<-c(string,s_i)
+}
+colnames(output)<-string
+
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 aplqm_fin<-cbind(subcount[,c("sex","quintmat")],sapply(output,rrfun))
 colnames(aplqm_fin)[3]<-"rr_prob"
@@ -875,8 +1068,10 @@ for(i in 1:ncol(output)){
 aplqmsum_output<-data.frame(aplqmsum_output)
 colnames(aplqmsum_output)<-c("mean","2.5","25","50","75","95")
 aplqmsum_output<-cbind(aplqmsum_output,subcount[,c("sex","quintmat")])
-#write_csv(aplqm_fin,"./1_data/private/boot_apl_sqm_5000.csv")
-#write_csv(aplqmsum_output,"boot_apl_sqm_5000_sumstats.csv")
+
+write_csv(output,"./1_data/private/boot_apl_sqm_5000_rr.csv")
+write_csv(aplqm_fin,"./1_data/private/boot_apl_sqm_5000.csv")
+write_csv(aplqmsum_output,"./1_data/private/boot_apl_sqm_5000_sumstats.csv")
 
 #Setting G (CLSA)
 #Initialize
@@ -920,6 +1115,14 @@ for(i in 1:n_replicates){
 #label columns and make data.frame
 output<-data.frame(output)
 
+#Assign column names
+string<-c()
+for(i in 1:nrow(subcount)){
+  s_i<-paste(subcount[i,"sex"],subcount[i,"quintmat"],sep = "-")
+  string<-c(string,s_i)
+}
+colnames(output)<-string
+
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 clsaqm_fin<-cbind(subcount[,c("sex","quintmat")],sapply(output,rrfun))
 colnames(clsaqm_fin)[3]<-"rr_prob"
@@ -941,8 +1144,10 @@ for(i in 1:ncol(output)){
 clsaqmsum_output<-data.frame(clsaqmsum_output)
 colnames(clsaqmsum_output)<-c("mean","2.5","25","50","75","95")
 clsaqmsum_output<-cbind(clsaqmsum_output,subcount[,c("sex","quintmat")])
-#write_csv(clsaqm_fin,"./1_data/private/boot_clsa_sqm_5000.csv")
-#write_csv(clsaqmsum_output,"boot_clsa_sqm_5000_sumstats.csv")
+
+write_csv(output,"./1_data/private/boot_clsa_sqm_5000_rr.csv")
+write_csv(clsaqm_fin,"./1_data/private/boot_clsa_sqm_5000.csv")
+write_csv(clsaqmsum_output,"./1_data/private/boot_clsa_sqm_5000_sumstats.csv")
 
 # Bootstrap sex-quintsoc representation ratios ----------------------------
 #Setting C (CBS)
@@ -987,6 +1192,14 @@ for(i in 1:n_replicates){
 #label columns and make data.frame
 output<-data.frame(output)
 
+#Assign column names
+string<-c()
+for(i in 1:nrow(subcount)){
+  s_i<-paste(subcount[i,"sex"],subcount[i,"quintsoc"],sep = "-")
+  string<-c(string,s_i)
+}
+colnames(output)<-string
+
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 cbsqs_fin<-cbind(subcount[,c("sex","quintsoc")],sapply(output,rrfun))
 colnames(cbsqs_fin)[3]<-"rr_prob"
@@ -1008,8 +1221,10 @@ for(i in 1:ncol(output)){
 cbsqssum_output<-data.frame(cbsqssum_output)
 colnames(cbsqssum_output)<-c("mean","2.5","25","50","75","95")
 cbsqssum_output<-cbind(cbsqssum_output,subcount[,c("sex","quintsoc")])
-#write_csv(cbsqs_fin,"./1_data/private/boot_cbs_sqs_5000.csv")
-#write_csv(cbsqssum_output,"boot_cbs_sqs_5000_sumstats.csv")
+
+write_csv(output,"./1_data/private/boot_cbs_sqs_5000_rr.csv")
+write_csv(cbsqs_fin,"./1_data/private/boot_cbs_sqs_5000.csv")
+write_csv(cbsqssum_output,"./1_data/private/boot_cbs_sqs_5000_sumstats.csv")
 
 #Setting E (APL)
 #Initialize
@@ -1053,6 +1268,14 @@ for(i in 1:n_replicates){
 #label columns and make data.frame
 output<-data.frame(output)
 
+#Assign column names
+string<-c()
+for(i in 1:nrow(subcount)){
+  s_i<-paste(subcount[i,"sex"],subcount[i,"quintsoc"],sep = "-")
+  string<-c(string,s_i)
+}
+colnames(output)<-string
+
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 aplqs_fin<-cbind(subcount[,c("sex","quintsoc")],sapply(output,rrfun))
 colnames(aplqs_fin)[3]<-"rr_prob"
@@ -1074,8 +1297,10 @@ for(i in 1:ncol(output)){
 aplqssum_output<-data.frame(aplqssum_output)
 colnames(aplqssum_output)<-c("mean","2.5","25","50","75","95")
 aplqssum_output<-cbind(aplqssum_output,subcount[,c("sex","quintsoc")])
-#write_csv(aplqs_fin,"./1_data/private/boot_apl_sqs_5000.csv")
-#write_csv(aplqssum_output,"boot_apl_sqs_5000_sumstats.csv")
+
+write_csv(output,"./1_data/private/boot_apl_sqs_5000_rr.csv")
+write_csv(aplqs_fin,"./1_data/private/boot_apl_sqs_5000.csv")
+write_csv(aplqssum_output,"./1_data/private/boot_apl_sqs_5000_sumstats.csv")
 
 #Setting G (CLSA)
 #Initialize
@@ -1119,6 +1344,14 @@ for(i in 1:n_replicates){
 #label columns and make data.frame
 output<-data.frame(output)
 
+#Assign column names
+string<-c()
+for(i in 1:nrow(subcount)){
+  s_i<-paste(subcount[i,"sex"],subcount[i,"quintsoc"],sep = "-")
+  string<-c(string,s_i)
+}
+colnames(output)<-string
+
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 clsaqs_fin<-cbind(subcount[,c("sex","quintsoc")],sapply(output,rrfun))
 colnames(clsaqs_fin)[3]<-"rr_prob"
@@ -1140,8 +1373,10 @@ for(i in 1:ncol(output)){
 clsaqssum_output<-data.frame(clsaqssum_output)
 colnames(clsaqssum_output)<-c("mean","2.5","25","50","75","95")
 clsaqssum_output<-cbind(clsaqssum_output,subcount[,c("sex","quintsoc")])
-#write_csv(clsaqs_fin,"./1_data/private/boot_clsa_sqs_5000.csv")
-#write_csv(clsaqssum_output,"boot_clsa_sqs_5000_sumstats.csv")
+
+write_csv(output,"./1_data/private/boot_clsa_sqs_5000_rr.csv")
+write_csv(clsaqs_fin,"./1_data/private/boot_clsa_sqs_5000.csv")
+write_csv(clsaqssum_output,"./1_data/private/boot_clsa_sqs_5000_sumstats.csv")
 
 # Bootstrap age-sex representation ratios (territories) -------------------
 #Setting F (CCAHS territories)
@@ -1257,6 +1492,14 @@ for(i in 1:n_replicates){
 #label columns and make data.frame
 output<-data.frame(output)
 
+#Assign column names
+string<-c()
+for(i in 1:nrow(subcount)){
+  s_i<-paste(subcount[i,"age_groups"],subcount[i,"sex"],subcount[i,"race1"],sep = "-")
+  string<-c(string,s_i)
+}
+colnames(output)<-string
+
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 abcr1_fin<-cbind(subcount[,c("age_groups","sex","race1")],sapply(output,rrfun))
 colnames(abcr1_fin)[4]<-"rr_prob"
@@ -1325,6 +1568,14 @@ for(i in 1:n_replicates){
 
 #label columns and make data.frame
 output<-data.frame(output)
+
+#Assign column names
+string<-c()
+for(i in 1:nrow(subcount)){
+  s_i<-paste(subcount[i,"age_groups"],subcount[i,"sex"],subcount[i,"race1"],sep = "-")
+  string<-c(string,s_i)
+}
+colnames(output)<-string
 
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 canr1_fin<-cbind(subcount[,c("age_groups","sex","race1")],sapply(output,rrfun))
@@ -1396,6 +1647,14 @@ for(i in 1:n_replicates){
 #label columns and make data.frame
 output<-data.frame(output)
 
+#Assign column names
+string<-c()
+for(i in 1:nrow(subcount)){
+  s_i<-paste(subcount[i,"age_groups"],subcount[i,"sex"],subcount[i,"race1"],sep = "-")
+  string<-c(string,s_i)
+}
+colnames(output)<-string
+
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 clsar1_fin<-cbind(subcount[,c("age_groups","sex","race1")],sapply(output,rrfun))
 colnames(clsar1_fin)[4]<-"rr_prob"
@@ -1431,7 +1690,7 @@ collect<-NULL
 #Manually add in required dataset as "data" and set up .csv at the bottom (saves computational resources)
 data<-can_df
 output<-matrix(NA,nrow = n_replicates,
-               ncol = 26)
+               ncol = 36)
 
 #Run
 set.seed(4)
@@ -1464,9 +1723,22 @@ for(i in 1:n_replicates){
   
   #calculate proportions and RR
   subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
-  subcount<-subcount[order(subcount$age_groups,subcount$sex,subcount$urban),]
-  subcount$pct_resample<-c(subcount$count / sum(subcount$count[1:20]))
-  subcount$pct_pop<-c(subcount$count_census / sum(subcount$count_census[1:20]))
+  subcount<-subcount[c(which(subcount$urban != "All regions" & 
+                               subcount$age_groups != "All ages"),
+                       which(subcount$urban == "All regions" & 
+                               subcount$age_groups != "All ages"),
+                       which(subcount$age_groups == "All ages" & 
+                               subcount$urban != "All regions"),
+                       which(subcount$urban == "All regions" & 
+                               subcount$age_groups == "All ages")),]
+  subcount$pct_resample<-c(subcount[1:20,]$count / sum(subcount[1:20,]$count),
+                           subcount[21:30,]$count / sum(subcount[21:30,]$count),
+                           subcount[31:34,]$count / sum(subcount[31:34,]$count),
+                           subcount[35:36,]$count / sum(subcount[35:36,]$count))
+  subcount$pct_pop<-c(subcount[1:20,]$count_census / sum(subcount[1:20,]$count_census),
+                      subcount[21:30,]$count_census / sum(subcount[21:30,]$count_census),
+                      subcount[31:34,]$count_census / sum(subcount[31:34,]$count_census),
+                      subcount[35:36,]$count_census / sum(subcount[35:36,]$count_census))
   subcount$rr<-subcount$pct_resample / subcount$pct_pop
   
   #save output to matrix
@@ -1476,6 +1748,14 @@ for(i in 1:n_replicates){
 
 #label columns and make data.frame
 output<-data.frame(output)
+
+#Assign column names
+string<-c()
+for(i in 1:nrow(subcount)){
+  s_i<-paste(subcount[i,"age_groups"],subcount[i,"sex"],subcount[i,"urban"],sep = "-")
+  string<-c(string,s_i)
+}
+colnames(output)<-string
 
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 can_fins2<-cbind(subcount[,c("age_groups","sex","urban")],sapply(output,rrfun))
@@ -1498,8 +1778,8 @@ cansums2_output<-data.frame(cansums2_output)
 colnames(cansums2_output)<-c("mean","2.5","25","50","75","95")
 cansums2_output<-cbind(cansums2_output,subcount[,c("age_groups","sex","urban")])
 
-#write_csv(can_fins2,"./1_data/private/boot_can_asu_5000_s2.csv")
-#write_csv(cansums2_output,"boot_can_asu_5000_sumstats_s2.csv")
+write_csv(can_fins2,"./1_data/private/boot_can_asu_5000_s2.csv")
+write_csv(cansums2_output,"boot_can_asu_5000_sumstats_s2.csv")
 
 # Setting G (CLSA)
 n_replicates<-5000 #number of bootstrap iterations
@@ -1508,7 +1788,7 @@ collect<-NULL
 #Manually add in required dataset as "data" and set up .csv at the bottom (saves computational resources)
 data<-clsa_df
 output<-matrix(NA,nrow = n_replicates,
-               ncol = 14)
+               ncol = 18)
 
 #Run
 set.seed(4)
@@ -1541,9 +1821,22 @@ for(i in 1:n_replicates){
   
   #calculate proportions and RR
   subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
-  subcount<-subcount[order(subcount$age_groups,subcount$sex,subcount$urban),]
-  subcount$pct_resample<-c(subcount$count / sum(subcount$count[1:8]))
-  subcount$pct_pop<-c(subcount$count_census / sum(subcount$count_census[1:8]))
+  subcount<-subcount[c(which(subcount$urban != "All regions" & 
+                               subcount$age_groups != "All ages"),
+                       which(subcount$urban == "All regions" & 
+                               subcount$age_groups != "All ages"),
+                       which(subcount$age_groups == "All ages" & 
+                               subcount$urban != "All regions"),
+                       which(subcount$urban == "All regions" & 
+                               subcount$age_groups == "All ages")),]
+  subcount$pct_resample<-c(subcount[1:8,]$count / sum(subcount[1:8,]$count),
+                           subcount[9:12,]$count / sum(subcount[9:12,]$count),
+                           subcount[13:16,]$count / sum(subcount[13:16,]$count),
+                           subcount[17:18,]$count / sum(subcount[17:18,]$count))
+  subcount$pct_pop<-c(subcount[1:8,]$count_census / sum(subcount[1:8,]$count_census),
+                      subcount[9:12,]$count_census / sum(subcount[9:12,]$count_census),
+                      subcount[13:16,]$count_census / sum(subcount[13:16,]$count_census),
+                      subcount[17:18,]$count_census / sum(subcount[17:18,]$count_census))
   subcount$rr<-subcount$pct_resample / subcount$pct_pop
   
   #save output to matrix
@@ -1553,6 +1846,14 @@ for(i in 1:n_replicates){
 
 #label columns and make data.frame
 output<-data.frame(output)
+
+#Assign column names
+string<-c()
+for(i in 1:nrow(subcount)){
+  s_i<-paste(subcount[i,"age_groups"],subcount[i,"sex"],subcount[i,"urban"],sep = "-")
+  string<-c(string,s_i)
+}
+colnames(output)<-string
 
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 clsa_fins2<-cbind(subcount[,c("age_groups","sex","urban")],sapply(output,rrfun))
@@ -1576,8 +1877,8 @@ clsasums2_output<-data.frame(clsasums2_output)
 colnames(clsasums2_output)<-c("mean","2.5","25","50","75","95")
 clsasums2_output<-cbind(clsasums2_output,subcount[,c("age_groups","sex","urban")])
 
-#write_csv(clsa_fins2,"./1_data/private/boot_clsa_asu_5000_s2.csv")
-#write_csv(clsasums2_output,"boot_clsa_asu_5000_sumstats_s2.csv")
+write_csv(clsa_fins2,"./1_data/private/boot_clsa_asu_5000_s2.csv")
+write_csv(clsasums2_output,"boot_clsa_asu_5000_sumstats_s2.csv")
 
 #Age-sex-race
 #Setting D (CanPath)
@@ -1624,6 +1925,14 @@ for(i in 1:n_replicates){
 
 #label columns and make data.frame
 output<-data.frame(output)
+
+#Assign column names
+string<-c()
+for(i in 1:nrow(subcount)){
+  s_i<-paste(subcount[i,"age_groups"],subcount[i,"sex"],subcount[i,"race"],sep = "-")
+  string<-c(string,s_i)
+}
+colnames(output)<-string
 
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 canrs2_fin<-cbind(subcount[,c("age_groups","sex","race")],sapply(output,rrfun))
@@ -1695,6 +2004,14 @@ for(i in 1:n_replicates){
 #label columns and make data.frame
 output<-data.frame(output)
 
+#Assign column names
+string<-c()
+for(i in 1:nrow(subcount)){
+  s_i<-paste(subcount[i,"age_groups"],subcount[i,"sex"],subcount[i,"race"],sep = "-")
+  string<-c(string,s_i)
+}
+colnames(output)<-string
+
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 clsars2_fin<-cbind(subcount[,c("age_groups","sex","race")],sapply(output,rrfun))
 colnames(clsars2_fin)[4]<-"rr_prob"
@@ -1762,6 +2079,14 @@ for(i in 1:n_replicates){
 #label columns and make data.frame
 output<-data.frame(output)
 
+#Assign column names
+string<-c()
+for(i in 1:nrow(subcount)){
+  s_i<-paste(subcount[i,"sex"],subcount[i,"quintmat"],sep = "-")
+  string<-c(string,s_i)
+}
+colnames(output)<-string
+
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 clsaqms2_fin<-cbind(subcount[,c("sex","quintmat")],sapply(output,rrfun))
 colnames(clsaqms2_fin)[3]<-"rr_prob"
@@ -1828,6 +2153,14 @@ for(i in 1:n_replicates){
 
 #label columns and make data.frame
 output<-data.frame(output)
+
+#Assign column names
+string<-c()
+for(i in 1:nrow(subcount)){
+  s_i<-paste(subcount[i,"sex"],subcount[i,"quintsoc"],sep = "-")
+  string<-c(string,s_i)
+}
+colnames(output)<-string
 
 #perform calculation and re-assign bootstrap probability to each subgroup combination
 clsaqss2_fin<-cbind(subcount[,c("sex","quintsoc")],sapply(output,rrfun))

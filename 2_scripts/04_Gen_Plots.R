@@ -7,6 +7,8 @@ library(tidyverse)
 library(colorspace)
 library(readxl)
 library(scales)
+library(ggridges)
+library(ggpubr)
 theme_set(theme_bw())
 
 #Load functions
@@ -17,16 +19,25 @@ cbs_asr1<-read.csv("./1_data/private/cbs_asr_final.csv")
 cbs_asu1<-read.csv("./1_data/private/cbs_asu_final.csv")
 cbs_sqm1<-read.csv("./1_data/private/cbs_sqm_final.csv")
 cbs_sqs1<-read.csv("./1_data/private/cbs_sqs_final.csv")
+basu_cbs<-read.csv("1_data/private/boot_cbs_asu_5000_rr.csv")
+basr_cbs<-read.csv("./1_data/private/boot_cbs_asr_5000_rr.csv")
+bsqm_cbs<-read.csv("./1_data/private/boot_cbs_sqm_5000_rr.csv")
+bsqs_cbs<-read.csv("./1_data/private/boot_cbs_sqs_5000_rr.csv")
 
 #APL
 apl_asu1<-read.csv("./1_data/private/apl_asu_final.csv")
 apl_sqm1<-read.csv("./1_data/private/apl_sqm_final.csv")
 apl_sqs1<-read.csv("./1_data/private/apl_sqs_final.csv")
+basu_apl<-read.csv("1_data/private/boot_apl_asu_5000_rr.csv")
+bsqm_apl<-read.csv("./1_data/private/boot_apl_sqm_5000_rr.csv")
+bsqs_apl<-read.csv("./1_data/private/boot_apl_sqs_5000_rr.csv")
 
 #Ab-C
 abc_asu1<-read.csv("./1_data/private/abc_asu_final.csv")
 abc_asr1<-read.csv("./1_data/private/abc_asr_final.csv")
 abc_asr2<-read.csv("./1_data/private/abc_asr1_final.csv")
+basu_abc<-read.csv("1_data/private/boot_abc_asu_5000_rr.csv")
+basr_abc<-read.csv("./1_data/private/boot_abc_asr_5000_rr.csv")
 
 #CLSA
 clsa_asu1<-read.csv("./1_data/private/clsa_asu_final.csv")
@@ -34,11 +45,17 @@ clsa_asr1<-read.csv("./1_data/private/clsa_asr_final.csv")
 clsa_sqm1<-read.csv("./1_data/private/clsa_sqm_final.csv")
 clsa_sqs1<-read.csv("./1_data/private/clsa_sqs_final.csv")
 clsa_asr2<-read.csv("./1_data/private/clsa_asr1_final.csv")
+basu_clsa<-read.csv("1_data/private/boot_clsa_asu_5000_rr.csv")
+basr_clsa<-read.csv("./1_data/private/boot_clsa_asr_5000_rr.csv")
+bsqm_clsa<-read.csv("./1_data/private/boot_clsa_sqm_5000_rr.csv")
+bsqs_clsa<-read.csv("./1_data/private/boot_clsa_sqs_5000_rr.csv")
 
 #CanPath
 can_asu1<-read.csv("./1_data/private/can_asu_final.csv")
 can_asr1<-read.csv("./1_data/private/can_asr_final.csv")
 can_asr2<-read.csv("./1_data/private/can_asr1_final.csv")
+basu_can<-read.csv("1_data/private/boot_can_asu_5000_rr.csv")
+basr_can<-read.csv("./1_data/private/boot_can_asr_5000_rr.csv")
 
 #CCAHS-1 run results
 ccapop_count<-read_xlsx("./1_data/private/2016 Canadian Census/10285/Sortie_CCAHS_Census_ratio/ccahs1asu.xlsx") %>% 
@@ -58,7 +75,7 @@ ccapopr_count1<-read_xlsx("1_data/private/2016 Canadian Census/10285/Sortie_CCAH
   mutate(age_groups = ccahs_age(age_groups))
 colnames(ccapopr_count1)[5]<-"rep_ratio"
 
-#Census datasets
+#Read in 2016 census datasets (urban)
 a_asu<-read.csv("./1_data/private/2016 Canadian Census/censusasu_a_abc.csv") #Ab-C
 c_asu<-read.csv("./1_data/private/2016 Canadian Census/censusasu_c_cbs.csv") #cbs
 d_asu<-read.csv("./1_data/private/2016 Canadian Census/censusasu_d_canpath.csv") #canpath
@@ -149,11 +166,11 @@ can_dtasr[can_dtasr$age_groups == "18-26 years" &
 # -- Raw counts --
 
 #Calculate proportion each subgroup contributes to total dataset
-cbs_dtasu$pct<-c(cbs_dtasu$count / sum(cbs_dtasu$count[1:24],na.rm = T))
-apl_dtasu$pct<-c(apl_dtasu$count / sum(apl_dtasu$count[1:24],na.rm = T))
-abc_dtasu$pct<-c(abc_dtasu$count / sum(abc_dtasu$count[1:24],na.rm = T))
-clsa_dtasu$pct<-c(clsa_dtasu$count / sum(clsa_dtasu$count[1:24],na.rm = T))
-can_dtasu$pct<-c(can_dtasu$count / sum(can_dtasu$count[1:24],na.rm = T))
+cbs_dtasu<-asu_clean(cbs_dtasu)
+apl_dtasu<-asu_clean(apl_dtasu)
+abc_dtasu<-asu_clean(abc_dtasu)
+clsa_dtasu<-asu_clean(clsa_dtasu)
+can_dtasu<-asu_clean(can_dtasu)
 
 #Plot all datasets in single plot
 cbs_dtasu$cohort<-"CBS blood donor"
@@ -274,9 +291,7 @@ ggplot(all_dtasu[!all_dtasu$urban == "All regions",],aes(x = sex, y = factor(age
 #---CBS representation ratio---
 cbspop_count<-merge(cbs_dtasu,c_asu,by = c("age_groups","sex","urban"),all.x = T)
 colnames(cbspop_count)[5]<-"pct_cbs" #percentage of total CBS samples in each subgroup
-cbspop_count<-cbspop_count[order(cbspop_count$age_groups,cbspop_count$sex,
-                                 cbspop_count$urban),]
-cbspop_count$pct_pop<-c(cbspop_count$count_census / sum(cbspop_count$count_census[1:24],na.rm = T))
+cbspop_count<-asu_clean1(cbspop_count)
 
 #Calculate representation ratio -- value = 1 indicates cbs sample adequately represents the corresponding population subgroup
 cbspop_count$rep_ratio<-cbspop_count$pct_cbs / cbspop_count$pct_pop
@@ -284,9 +299,7 @@ cbspop_count$rep_ratio<-cbspop_count$pct_cbs / cbspop_count$pct_pop
 #---APL representation ratio---
 aplpop_count<-merge(apl_dtasu,e_asu,by = c("age_groups","sex","urban"),all.x =T)
 colnames(aplpop_count)[5]<-"pct_apl" #percentage of total apl samples in each subgroup
-aplpop_count<-aplpop_count[order(aplpop_count$age_groups,aplpop_count$sex,
-                                 aplpop_count$urban),]
-aplpop_count$pct_pop<-c(aplpop_count$count_census / sum(aplpop_count$count_census[1:24],na.rm = T))
+aplpop_count<-asu_clean1(aplpop_count)
 
 #Calculate representation ratio -- value = 1 indicates apl sample adequately represents the corresponding population subgroup
 aplpop_count$rep_ratio<-aplpop_count$pct_apl / aplpop_count$pct_pop
@@ -294,9 +307,7 @@ aplpop_count$rep_ratio<-aplpop_count$pct_apl / aplpop_count$pct_pop
 #---Ab-C representation ratio---
 abcpop_count<-merge(abc_dtasu,a_asu,by = c("age_groups","sex","urban"),all.x = T)
 colnames(abcpop_count)[5]<-"pct_abc" #percentage of total abc samples in each subgroup
-abcpop_count<-abcpop_count[order(abcpop_count$age_groups,abcpop_count$sex,
-                                 abcpop_count$urban),]
-abcpop_count$pct_pop<-c(abcpop_count$count_census / sum(abcpop_count$count_census[1:24],na.rm = T))
+abcpop_count<-asu_clean1(abcpop_count)
 
 #Calculate representation ratio -- value = 1 indicates Ab-C sample adequately represents the corresponding population subgroup
 abcpop_count$rep_ratio<-abcpop_count$pct_abc / abcpop_count$pct_pop
@@ -304,9 +315,7 @@ abcpop_count$rep_ratio<-abcpop_count$pct_abc / abcpop_count$pct_pop
 #-- CLSA representation ratio --
 clsapop_count<-merge(clsa_dtasu,g_asu,by = c("age_groups","sex","urban"),all.x = T)
 colnames(clsapop_count)[5]<-"pct_clsa" #percentage of total clsa samples in each subgroup
-clsapop_count<-clsapop_count[order(clsapop_count$age_groups,clsapop_count$sex,
-                                 clsapop_count$urban),]
-clsapop_count$pct_pop<-c(clsapop_count$count_census / sum(clsapop_count$count_census[1:24],na.rm = T))
+clsapop_count<-asu_clean1(clsapop_count)
 
 #Calculate representation ratio -- value = 1 indicates cbs sample adequately represents the corresponding population subgroup
 clsapop_count$rep_ratio<-clsapop_count$pct_clsa / clsapop_count$pct_pop
@@ -314,9 +323,7 @@ clsapop_count$rep_ratio<-clsapop_count$pct_clsa / clsapop_count$pct_pop
 #-- CanPath representation ratio --
 canpop_count<-merge(can_dtasu,d_asu,by = c("age_groups","sex","urban"),all.x = T)
 colnames(canpop_count)[5]<-"pct_can" #percentage of total can samples in each subgroup
-canpop_count<-canpop_count[order(canpop_count$age_groups,canpop_count$sex,
-                                 canpop_count$urban),]
-canpop_count$pct_pop<-c(canpop_count$count_census / sum(canpop_count$count_census[1:24],na.rm = T))
+canpop_count<-asu_clean1(canpop_count)
 
 #Calculate representation ratio -- value = 1 indicates CanPath sample adequately represents the corresponding population subgroup
 canpop_count$rep_ratio<-canpop_count$pct_can / canpop_count$pct_pop
@@ -932,7 +939,6 @@ f<-f %>% mutate(
                                  "27-36 years","37-46 years","47-56 years",
                                  "57+ years"))
 )
-  
 
 f1<-f %>% filter(age_groups == "All ages")
 f2<-f %>% filter(age_groups != "All ages")
@@ -976,7 +982,7 @@ s1_sqs<-ggplot(f2_qs,aes(x = sex,y = factor(quintsoc,levels = c(1:5)),
                 fontface = ifelse(rr_prob > 0.95,2,1)),
             color = "black",size =3.5)+
   facet_grid(cols = vars(cohort))+
-  labs(fill = "Representativeness \n Ratio (RR)",
+  labs(fill = "Representativeness \nRatio",
        x = "Sex",
        y = "Social deprivation quintile")+
   scale_fill_gradientn(colours = cols,
@@ -1022,7 +1028,7 @@ ast_rr
 ggsave("4_output/figs/supp_astrr.svg",width = 6.0,height = 3.5)
 
 #Figure 2
-f2_p<-ggplot(f2,aes(x = sex,y = age_groups,
+f2_p<-ggplot(f2[f2$strata != "All",],aes(x = sex,y = age_groups,
                    fill = rep_ratio))+
   geom_tile(color = "black",show.legend = F,linewidth = 0.1)+
   geom_text(aes(label = rep_ratio,
@@ -1316,24 +1322,18 @@ ggsave("4_output/figs/supp_sensr1rr.svg",width = 8, height = 6.0,units = "in")
 #-- CLSA representation ratio --
 clsapops2_count<-merge(clsa_dtasu,g_asus2,by = c("age_groups","sex","urban"),all.x = T)
 colnames(clsapops2_count)[5]<-"pct_clsa" #percentage of total clsa samples in each subgroup
-clsapops2_count<-clsapops2_count[order(clsapops2_count$age_groups,clsapops2_count$sex,
-                                   clsapops2_count$urban),]
-clsapops2_count$pct_pop<-c(clsapops2_count$count_census / sum(clsapops2_count$count_census[1:24],na.rm = T))
+clsapops2_count<-asu_clean1(clsapops2_count)
 
 #Calculate representation ratio -- value = 1 indicates cbs sample adequately represents the corresponding population subgroup
 clsapops2_count$rep_ratio<-clsapops2_count$pct_clsa / clsapops2_count$pct_pop
-clsapops2_count$cohort<-"CLSA closed cohort"
 
 #-- CanPath representation ratio --
 canpops2_count<-merge(can_dtasu,d_asus2,by = c("age_groups","sex","urban"),all.x = T)
 colnames(canpops2_count)[5]<-"pct_can" #percentage of total can samples in each subgroup
-canpops2_count<-canpops2_count[order(canpops2_count$age_groups,canpops2_count$sex,
-                                 canpops2_count$urban),]
-canpops2_count$pct_pop<-c(canpops2_count$count_census / sum(canpops2_count$count_census[1:24],na.rm = T))
+canpops2_count<-asu_clean1(canpops2_count)
 
 #Calculate representation ratio -- value = 1 indicates CanPath sample adequately represents the corresponding population subgroup
 canpops2_count$rep_ratio<-canpops2_count$pct_can / canpops2_count$pct_pop
-canpops2_count$cohort<-"CanPath closed cohort"
 
 #Merge datasets together and join with bootstrap results
 allpopus2_count<-do.call("rbind",list(clsapops2_count[,colnames],
@@ -1480,9 +1480,9 @@ s2_sqs
 ggsave("4_output/figs/s2_sqs.svg",width=7.0,height=4.0,unit="in")
 
 #Figure 2 all ages
-supp_sensr2rr<-ggplot(f2s2,aes(x = sex,y = age_groups,
+supp_sensr2rr<-ggplot(f2s2[f2s2$strata != "All",],aes(x = sex,y = age_groups,
               fill = rep_ratio))+
-  geom_tile(color = "black",show.legend = F,linewidth = 0.1)+
+  geom_tile(color = "black",show.legend = T,linewidth = 0.1)+
   geom_text(aes(label = rep_ratio,
                 fontface = ifelse(rr_prob > 0.95,2,1)),
             color = "black",size = 3.0)+
@@ -1493,14 +1493,14 @@ supp_sensr2rr<-ggplot(f2s2,aes(x = sex,y = age_groups,
   scale_fill_gradientn(colours = cols,
                        values = c(rescale(x = c(0,7/10,1,10/7,3),to = c(0,1))),
                        n.breaks = 4,
-                       limits = c(0,3),
+                       limits = c(0,3.1),
                        na.value = "grey80")+
   scale_y_discrete(labels = c("0-17 years" = "0-17",
                               "18-26 years" = "18-26","27-36 years" = "27-36",
                               "37-46 years" = "37-46","47-56 years" = "47-56",
                               "57+ years" = "Age 57+"))+
   theme(legend.text = element_text(size = 7.5),
-        legend.position = "bottom",
+        legend.position = "right",
         legend.margin = margin(rep(0,4)),
         legend.box.margin = margin(rep(0,4)),
         legend.spacing.x = unit(0.1,"cm"),
@@ -1516,7 +1516,7 @@ s2_sqm<-ggplot(f2_qm2,aes(x = sex,y = factor(quintmat,levels = c(1:5)),
   scale_fill_gradientn(colours = cols,
                        values = c(rescale(x = c(0,7/10,1,10/7,3),to = c(0,1))),
                        n.breaks = 4,
-                       limits = c(0,3),
+                       limits = c(0,3.1),
                        na.value = "grey80")+
   geom_text(aes(label = rep_ratio,
                 fontface = ifelse(rr_prob > 0.95,2,1)),
@@ -1541,3 +1541,666 @@ g2$widths[4]<-g2$widths[4] * 4.77 #shift bottom portion to the right while keepi
 gridExtra::grid.arrange(g1,g2)
 f2a2<-gridExtra::grid.arrange(g1,g2)
 ggsave("4_output/figs/supp_sens2rr.svg",plot = f2a2,width=7,height=9,unit="in")
+
+# Plot bootstrap distributions --------------------------------------------
+#Plot RR distribution for various strata
+#Compile data into lists for cleaning
+bsu_list<-list(basu_cbs[,31:36],basu_apl[,37:42],
+               basu_abc[,31:36],basu_can[,31:36],
+               basu_clsa[,13:18])
+bsr_list<-list(basr_cbs[,21:24],basr_abc[,21:24],
+               basr_can[,21:24],basr_clsa[,9:12])
+basu_list<-list(basu_cbs[,1:30],basu_apl[,1:36],
+                basu_abc[,1:30],basu_can[,1:30],
+                basu_clsa[,1:12])
+basr_list<-list(basr_cbs[,1:20],basr_abc[,1:20],
+               basr_can[,1:20],basr_clsa[,1:8])
+bsqm_list<-list(bsqm_cbs,bsqm_apl,bsqm_clsa)
+bsqs_list<-list(bsqs_cbs,bsqs_apl,bsqs_clsa)
+
+names(basu_list)<-c("CBS","APL","Ab-C","CanPath","CLSA")
+names(basr_list)<-c("CBS","Ab-C","CanPath","CLSA")
+names(bsu_list)<-c("CBS","APL","Ab-C","CanPath","CLSA")
+names(bsr_list)<-c("CBS","Ab-C","CanPath","CLSA")
+names(bsqm_list)<-c("CBS","APL","CLSA")
+names(bsqs_list)<-c("CBS","APL","CLSA")
+
+#For each list, assign column names for plotting
+for(i in 1:length(bsu_list)){
+  colnames(bsu_list[[i]])<-c("Female:Rural","Female:Urban",
+                             "Male:Rural","Male:Urban",
+                             "Female:All","Male:All")
+  bsu_list[[i]]$data<-names(bsu_list)[i]
+}
+
+for(i in 1:length(bsr_list)){
+  colnames(bsr_list[[i]])<-c("Female:Racialized\nminority","Female:White",
+                             "Male:Racialized\nminority","Male:White")
+  bsr_list[[i]]$data<-names(bsr_list)[i]
+}
+
+for(i in 1:length(basu_list)){
+  if (i %in% c(1,3,4)){
+    colnames(basu_list[[i]])<-c("18-26 :Female:Rural","18-26 :Female:Urban",
+                              "18-26 :Male:Rural","18-26 :Male:Urban",
+                              "27-36 :Female:Rural","27-36 :Female:Urban",
+                              "27-36 :Male:Rural","27-36 :Male:Urban",
+                              "37-46 :Female:Rural","37-46 :Female:Urban",
+                              "37-46 :Male:Rural","37-46 :Male:Urban",
+                              "47-56 :Female:Rural","47-56 :Female:Urban",
+                              "47-56 :Male:Rural","47-56 :Male:Urban",
+                              "57+ :Female:Rural","57+ :Female:Urban",
+                              "57+ :Male:Rural","57+ :Male:Urban",
+                              "18-26 :Female:All regions","18-26 :Male:All regions",
+                              "27-36 :Female:All regions","27-36 :Male:All regions",
+                              "37-46 :Female:All regions","37-46 :Male:All regions",
+                              "47-56 :Female:All regions","47-56 :Male:All regions",
+                              "57+ :Female:All regions","57+ :Male:All regions")
+  basu_list[[i]]$data<-names(basu_list)[i] 
+  } else if (i == 2) {
+    colnames(basu_list[[i]])<-c("0-17 :Female:Rural","0-17 :Female:Urban",
+                                "0-17 :Male:Rural","0-17 :Male:Urban",
+                                "18-26 :Female:Rural","18-26 :Female:Urban",
+                                "18-26 :Male:Rural","18-26 :Male:Urban",
+                                "27-36 :Female:Rural","27-36 :Female:Urban",
+                                "27-36 :Male:Rural","27-36 :Male:Urban",
+                                "37-46 :Female:Rural","37-46 :Female:Urban",
+                                "37-46 :Male:Rural","37-46 :Male:Urban",
+                                "47-56 :Female:Rural","47-56 :Female:Urban",
+                                "47-56 :Male:Rural","47-56 :Male:Urban",
+                                "57+ :Female:Rural","57+ :Female:Urban",
+                                "57+ :Male:Rural","57+ :Male:Urban",
+                                "0-17 :Female:All regions","0-17 :Male:All regions",
+                                "18-26 :Female:All regions","18-26 :Male:All regions",
+                                "27-36 :Female:All regions","27-36 :Male:All regions",
+                                "37-46 :Female:All regions","37-46 :Male:All regions",
+                                "47-56 :Female:All regions","47-56 :Male:All regions",
+                                "57+ :Female:All regions","57+ :Male:All regions")
+    basu_list[[i]]$data<-names(basu_list)[i]
+  } else if (i == 5){
+    colnames(basu_list[[i]])<-c("47-56 :Female:Rural","47-56 :Female:Urban",
+                                "47-56 :Male:Rural","47-56 :Male:Urban",
+                                "57+ :Female:Rural","57+ :Female:Urban",
+                                "57+ :Male:Rural","57+ :Male:Urban",
+                                "47-56 :Female:All regions","47-56 :Male:All regions",
+                                "57+ :Female:All regions","57+ :Male:All regions")
+    basu_list[[i]]$data<-names(basu_list)[i]
+  } else {
+    print("Out of range")
+  }
+}
+
+for(i in 1:length(basr_list)){
+  if (i %in% c(1:3)){
+    colnames(basr_list[[i]])<-c("18-26 :Female:Racialized\nminority","18-26 :Female:White",
+                                "18-26 :Male:Racialized\nminority","18-26 :Male:White",
+                                "27-36 :Female:Racialized\nminority","27-36 :Female:White",
+                                "27-36 :Male:Racialized\nminority","27-36 :Male:White",
+                                "37-46 :Female:Racialized\nminority","37-46 :Female:White",
+                                "37-46 :Male:Racialized\nminority","37-46 :Male:White",
+                                "47-56 :Female:Racialized\nminority","47-56 :Female:White",
+                                "47-56 :Male:Racialized\nminority","47-56 :Male:White",
+                                "57+ :Female:Racialized\nminority","57+ :Female:White",
+                                "57+ :Male:Racialized\nminority","57+ :Male:White")
+    basr_list[[i]]$data<-names(basr_list)[i] 
+  } else if (i == 4) {
+    colnames(basr_list[[i]])<-c("47-56 :Female:Racialized\nminority","47-56 :Female:White",
+                                "47-56 :Male:Racialized\nminority","47-56 :Male:White",
+                                "57+ :Female:Racialized\nminority","57+ :Female:White",
+                                "57+ :Male:Racialized\nminority","57+ :Male:White")
+    basr_list[[i]]$data<-names(basr_list)[i]
+  } else {
+    print("Out of range")
+  }
+}
+
+for(i in 1:length(bsqm_list)){
+  colnames(bsqm_list[[i]])<-c("Female:1","Male:1","Female:2","Male:2",
+                              "Female:3","Male:3","Female:4","Male:4",
+                              "Female:5","Male:5")
+  bsqm_list[[i]]$data<-names(bsqm_list)[i]
+}
+
+for(i in 1:length(bsqs_list)){
+  colnames(bsqs_list[[i]])<-c("Female:1","Male:1","Female:2","Male:2",
+                              "Female:3","Male:3","Female:4","Male:4",
+                              "Female:5","Male:5")
+  bsqs_list[[i]]$data<-names(bsqs_list)[i]
+}
+
+#Transform lists into dfs for pivoting
+bsu_df<-do.call("rbind",bsu_list)
+bsr_df<-do.call("rbind",bsr_list)
+basu_df1<-do.call("rbind",basu_list[c(1,3,4)])
+basu_df2<-basu_list[[2]]
+basu_df3<-basu_list[[5]]
+basr_df1<-do.call("rbind",basr_list[c(1:3)])
+basr_df2<-basr_list[[4]]
+bsqm_df<-do.call("rbind",bsqm_list)
+bsqs_df<-do.call("rbind",bsqs_list)
+
+#Pivot each df to long format
+bsu_df<-bsu_df %>% pivot_longer(cols = "Female:Rural":"Male:All",
+                                names_to = c("sex","strata"),
+                                names_sep = ":",
+                                values_to = "rr") %>% 
+  mutate(data = factor(data,levels = (c("CBS","APL","CLSA","CanPath","Ab-C"))))
+
+bsr_df<-bsr_df %>% pivot_longer(cols = "Female:Racialized\nminority":"Male:White",
+                                names_to = c("sex","strata"),
+                                names_sep = ":",
+                                values_to = "rr") %>% 
+  mutate(data = factor(data,levels = (c("CBS","CLSA","CanPath","Ab-C"))))
+
+basu_df1<-basu_df1 %>% pivot_longer(cols = "18-26 :Female:Rural":"57+ :Male:All regions",
+                                    names_to = c("age_groups","sex","strata"),
+                                    names_sep = ":",
+                                    values_to = "rr") %>% 
+  mutate(data = factor(data,levels = (c("CBS","APL","CLSA","CanPath","Ab-C"))))
+
+basu_df2<-basu_df2 %>% pivot_longer(cols = "0-17 :Female:Rural":
+                                      "57+ :Male:All regions",
+                                    names_to = c("age_groups","sex","strata"),
+                                    names_sep = ":",
+                                    values_to = "rr")
+
+basu_df3<-basu_df3 %>% pivot_longer(cols = "47-56 :Female:Rural":"57+ :Male:All regions",
+                                    names_to = c("age_groups","sex","strata"),
+                                    names_sep = ":",
+                                    values_to = "rr")
+
+basr_df1<-basr_df1 %>% pivot_longer(cols = "18-26 :Female:Racialized\nminority":
+                                      "57+ :Male:White",
+                                    names_to = c("age_groups","sex","strata"),
+                                    names_sep = ":",
+                                    values_to = "rr") %>% 
+  mutate(data = factor(data,levels = (c("CBS","CLSA","CanPath","Ab-C"))))
+
+basr_df2<-basr_df2 %>% pivot_longer(cols = "47-56 :Female:Racialized\nminority":
+                                      "57+ :Male:White",
+                                    names_to = c("age_groups","sex","strata"),
+                                    names_sep = ":",
+                                    values_to = "rr")
+
+bsqm_df<-bsqm_df %>% pivot_longer(cols = "Female:1":"Male:5",
+                                  names_to = c("sex","strata"),
+                                  names_sep = ":",
+                                  values_to = "rr") %>% 
+  mutate(data = factor(data,levels = (c("CBS","APL","CLSA"))))
+
+bsqs_df<-bsqs_df %>% pivot_longer(cols = "Female:1":"Male:5",
+                                  names_to = c("sex","strata"),
+                                  names_sep = ":",
+                                  values_to = "rr") %>% 
+  mutate(data = factor(data,levels = (c("CBS","APL","CLSA"))))
+
+#Combine dfs for plotting
+bdf_sur<-do.call("rbind",list(bsu_df,bsr_df))
+bdf_sur$strata<-factor(bdf_sur$strata,levels = c("All","Rural","Urban",
+                                                 "Racialized\nminority","White"))
+bdf_asu<-do.call("rbind",list(basu_df1,basu_df2,basu_df3))
+bdf_asr<-do.call("rbind",list(basr_df1,basr_df2))
+bdf_asur<-do.call("rbind",list(bdf_asu,bdf_asr)) #final df
+
+#Transform RR to log10 scale & pseudo-adjust -Inf values for visualization
+bdf_sur$rr<-ifelse(bdf_sur$rr < 0.1,0.1,bdf_sur$rr) #for histogram
+bdf_sur$rr10<-log10(bdf_sur$rr)
+bdf_asur$rr<-ifelse(bdf_asur$rr < 0.1,0.1,bdf_asur$rr)
+bdf_asur$rr10<-log10(bdf_asur$rr)
+bsqm_df$rr<-ifelse(bsqm_df$rr < 0.1,0.1,bsqm_df$rr)
+bsqm_df$rr10<-log10(bsqm_df$rr)
+bsqs_df$rr<-ifelse(bsqs_df$rr < 0.1,0.1,bsqs_df$rr)
+bsqs_df$rr10<-log10(bsqs_df$rr)
+
+#Sex,Sex-urban,Sex-ethnicity
+plot_breaks <- c(-1,#-0.9,
+                 -0.775,#-0.65,
+                 -0.525,#-0.4,
+                 -0.275,#-0.15,
+                 -0.025,#0.1,
+                 0.225,#0.35,
+                 0.475,#0.6,
+                 0.725,#0.85,
+                 0.975)
+p_list <- list()
+plot_cols<-c("#E16A86","#009ADE")
+names(plot_cols)<-c("Female","Male")
+for(i in 1:5){
+  if (i == 4){
+  p<-ggplot(bdf_sur[bdf_sur$data == unique(bdf_sur$data)[i],],
+            aes(x = rr10,group = sex))+
+    geom_histogram(aes(fill = sex),alpha = 0.40,
+                   binwidth = 0.01,closed = "left",position = "identity")+
+    #multiply geom_histgram count by binwidth for smoother density estimates
+    geom_density(aes(y = 0.01 * after_stat(count),color = sex))+
+    facet_grid(rows = vars(strata),
+               cols = vars(data),scales = "free_y")+
+    coord_cartesian(xlim = c(-1,0.48))+
+    scale_x_continuous(labels = function(x) round(10^x,2),
+                       breaks = plot_breaks)+
+    scale_fill_manual(name = "Sex",values = plot_cols,aesthetics = c("fill","color"))+
+    geom_vline(aes(xintercept = log10(1)),
+               colour = "black",linetype = "dashed",alpha = 0.4)+
+    geom_vline(aes(xintercept = log10(3/4)),
+               colour = "red",linetype = "dashed",alpha = 0.4)+
+    geom_vline(aes(xintercept = log10(4/3)),
+               colour = "red",linetype = "dashed",alpha = 0.4)+
+    theme(
+      axis.title = element_blank(),
+      axis.text.y = element_blank(),
+      axis.ticks.y = element_blank()
+    )
+  p_list[[i]] <- p
+  }
+  else{
+    p<-ggplot(bdf_sur[bdf_sur$data == unique(bdf_sur$data)[i],],
+           aes(x = rr10,group = sex))+
+      geom_histogram(aes(fill = sex),alpha = 0.40,
+                     binwidth = 0.01,closed = "left",position = "identity")+
+      #multiply geom_histgram count by binwidth for smoother density estimates
+      geom_density(aes(y = 0.01 * after_stat(count),color = sex))+
+      facet_grid(rows = vars(strata),
+                 cols = vars(data),scales = "free_y")+
+      coord_cartesian(xlim = c(-1,0.48))+
+      scale_x_continuous(labels = function(x) round(10^x,2),
+                         breaks = plot_breaks)+
+      scale_fill_manual(name = "Sex",values = plot_cols,aesthetics = c("fill","color"))+
+      geom_vline(aes(xintercept = log10(1)),
+                 colour = "black",linetype = "dashed",alpha = 0.4)+
+      geom_vline(aes(xintercept = log10(3/4)),
+                 colour = "red",linetype = "dashed",alpha = 0.4)+
+      geom_vline(aes(xintercept = log10(4/3)),
+                 colour = "red",linetype = "dashed",alpha = 0.4)+
+      theme(
+        axis.title = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank()
+      )
+    p_list[[i]] <- p
+  }
+}
+p_sur<-ggarrange(p_list[[1]],p_list[[2]],p_list[[3]],p_list[[4]],p_list[[5]],
+          common.legend = T,legend = "bottom")
+p_sur
+ggsave("4_output/figs/boot_sur.svg",plot = p_sur,width=11,height=9,unit="in")
+
+#Sex-quintmat
+p_list <- list()
+for(i in 1:3){
+  p<-ggplot(bsqm_df[bsqm_df$data == unique(bsqm_df$data)[i],],
+            aes(x = rr10,group = sex))+
+    geom_histogram(aes(fill = sex),alpha = 0.40,
+                   binwidth = 0.01,closed = "left",position = "identity")+
+    geom_density(aes(y = 0.01 * after_stat(count),color = sex))+
+    facet_grid(rows = vars(strata),
+               cols = vars(data),scales = "free_y")+
+    coord_cartesian(xlim = c(-1,0.48))+
+    scale_x_continuous(labels = function(x) round(10^x,2),
+                       breaks = plot_breaks)+
+    scale_fill_manual(name = "Sex",values = plot_cols,aesthetics = c("fill","color"))+
+    geom_vline(aes(xintercept = log10(1)),
+               colour = "black",linetype = "dashed",alpha = 0.4)+
+    geom_vline(aes(xintercept = log10(3/4)),
+               colour = "red",linetype = "dashed",alpha = 0.4)+
+    geom_vline(aes(xintercept = log10(4/3)),
+               colour = "red",linetype = "dashed",alpha = 0.4)+
+    theme(
+      axis.title = element_blank(),
+      axis.text.y = element_blank(),
+      axis.ticks.y = element_blank()
+    )
+  p_list[[i]] <- p
+}
+p_sqm<-ggarrange(p_list[[1]],p_list[[2]],p_list[[3]],
+          common.legend = T,legend = "bottom")
+p_sqm
+ggsave("4_output/figs/boot_sqm.svg",plot = p_sqm,width=8,height=6,unit="in")
+
+#Sex-quintsoc
+p_list <- list()
+for(i in 1:3){
+  p<-ggplot(bsqs_df[bsqs_df$data == unique(bsqs_df$data)[i],],
+            aes(x = rr10,group = sex))+
+    geom_histogram(aes(fill = sex),alpha = 0.40,
+                   binwidth = 0.01,closed = "left",position = "identity")+
+    geom_density(aes(y = 0.01 * after_stat(count),color = sex))+
+    facet_grid(rows = vars(strata),
+               cols = vars(data),scales = "free_y")+
+    coord_cartesian(xlim = c(-1,0.48))+
+    scale_x_continuous(labels = function(x) round(10^x,2),
+                       breaks = plot_breaks)+
+    scale_fill_manual(name = "Sex",values = plot_cols,aesthetics = c("fill","color"))+
+    geom_vline(aes(xintercept = log10(1)),
+               colour = "black",linetype = "dashed",alpha = 0.4)+
+    geom_vline(aes(xintercept = log10(3/4)),
+               colour = "red",linetype = "dashed",alpha = 0.4)+
+    geom_vline(aes(xintercept = log10(4/3)),
+               colour = "red",linetype = "dashed",alpha = 0.4)+
+    theme(
+      axis.title = element_blank(),
+      axis.text.y = element_blank(),
+      axis.ticks.y = element_blank()
+    )
+  p_list[[i]] <- p
+}
+p_sqs<-ggarrange(p_list[[1]],p_list[[2]],p_list[[3]],
+                 common.legend = T,legend = "bottom")
+p_sqs
+ggsave("4_output/figs/boot_sqs.svg",plot = p_sqs,width=8,height=6,unit="in")
+
+#Age-sex-all - check syntax before publishing
+p_list <- list()
+for(i in 1:5){
+  if (i == 3){  
+    p<-ggplot(bdf_asur[bdf_asur$strata == "All regions" & bdf_asur$data == 
+                         unique(bdf_asur$data)[i],],
+              aes(x = rr10,group = sex))+
+      geom_histogram(aes(fill = sex),alpha = 0.40,
+                     binwidth = 0.005,closed = "left",position = "identity")+
+      geom_density(aes(y = 0.005 * after_stat(count),color = sex))+
+      facet_grid(rows = vars(age_groups),
+                 cols = vars(data),scales = "free_y")+
+      coord_cartesian(xlim = c(-1,0.48))+
+      scale_x_continuous(labels = function(x) round(10^x,2),
+                         breaks = plot_breaks)+
+      scale_fill_manual(name = "Sex",values = plot_cols,aesthetics = c("fill","color"))+
+      geom_vline(aes(xintercept = log10(1)),
+                 colour = "black",linetype = "dashed",alpha = 0.4)+
+      geom_vline(aes(xintercept = log10(3/4)),
+                 colour = "red",linetype = "dashed",alpha = 0.4)+
+      geom_vline(aes(xintercept = log10(4/3)),
+                 colour = "red",linetype = "dashed",alpha = 0.4)+
+      theme(
+        axis.title = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank()
+      )
+    p_list[[i]] <- p
+  }
+  else{
+    p<-ggplot(bdf_asur[bdf_asur$strata == "All regions" & bdf_asur$data == 
+                       unique(bdf_asur$data)[i],],
+              aes(x = rr10,group = sex))+
+      geom_histogram(aes(fill = sex),alpha = 0.40,
+                     binwidth = 0.001,closed = "left",position = "identity")+
+      geom_density(aes(y = 0.001 * after_stat(count),color = sex))+
+      facet_grid(rows = vars(age_groups),
+               cols = vars(data),scales = "free_y")+
+      coord_cartesian(xlim = c(-1,0.48))+
+      scale_x_continuous(labels = function(x) round(10^x,2),
+                         breaks = plot_breaks)+
+      scale_fill_manual(name = "Sex",values = plot_cols,aesthetics = c("fill","color"))+
+      geom_vline(aes(xintercept = log10(1)),
+                 colour = "black",linetype = "dashed",alpha = 0.4)+
+      geom_vline(aes(xintercept = log10(3/4)),
+                 colour = "red",linetype = "dashed",alpha = 0.4)+
+      geom_vline(aes(xintercept = log10(4/3)),
+                 colour = "red",linetype = "dashed",alpha = 0.4)+
+    theme(
+      axis.title = element_blank(),
+      axis.text.y = element_blank(),
+      axis.ticks.y = element_blank()
+    )
+  p_list[[i]] <- p
+  }
+}
+p_asa<-ggarrange(p_list[[1]],p_list[[2]],p_list[[3]],p_list[[4]],p_list[[5]],
+          common.legend = T,legend = "bottom",nrow = 3,ncol = 2)
+p_asa
+ggsave("4_output/figs/boot_asa.svg",plot = p_asa,width=10.5,height=10,unit="in")
+
+#Age-sex-urban
+p_list <- list()
+for(i in 1:5){
+  if ( i == 3){  
+    p<-ggplot(bdf_asur[bdf_asur$strata == "Urban" & bdf_asur$data == 
+                         unique(bdf_asur$data)[i],],
+              aes(x = rr10,group = sex))+
+      geom_histogram(aes(fill = sex),alpha = 0.40,
+                     binwidth = 0.01,closed = "left",position = "identity")+
+      geom_density(aes(y = 0.01 * after_stat(count),color = sex))+
+      facet_grid(rows = vars(age_groups),
+                 cols = vars(data),scales = "free_y")+
+      coord_cartesian(xlim = c(-1,0.48))+
+      scale_x_continuous(labels = function(x) round(10^x,2),
+                         breaks = plot_breaks)+
+      scale_fill_manual(name = "Sex",values = plot_cols,aesthetics = c("fill","color"))+
+      geom_vline(aes(xintercept = log10(1)),
+                 colour = "black",linetype = "dashed",alpha = 0.4)+
+      geom_vline(aes(xintercept = log10(3/4)),
+                 colour = "red",linetype = "dashed",alpha = 0.4)+
+      geom_vline(aes(xintercept = log10(4/3)),
+                 colour = "red",linetype = "dashed",alpha = 0.4)+
+      theme(
+        axis.title = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank()
+      )
+    p_list[[i]] <- p
+  }
+  else{
+    p<-ggplot(bdf_asur[bdf_asur$strata == "Urban" & bdf_asur$data == 
+                         unique(bdf_asur$data)[i],],
+              aes(x = rr10,group = sex))+
+      geom_histogram(aes(fill = sex),alpha = 0.40,
+                     binwidth = 0.01,closed = "left",position = "identity")+
+      geom_density(aes(y = 0.01 * after_stat(count),color = sex))+
+      facet_grid(rows = vars(age_groups),
+                 cols = vars(data),scales = "free_y")+
+      coord_cartesian(xlim = c(-1,0.48))+
+      scale_x_continuous(labels = function(x) round(10^x,2),
+                         breaks = plot_breaks)+
+      scale_fill_manual(name = "Sex",values = plot_cols,aesthetics = c("fill","color"))+
+      geom_vline(aes(xintercept = log10(1)),
+                 colour = "black",linetype = "dashed",alpha = 0.4)+
+      geom_vline(aes(xintercept = log10(3/4)),
+                 colour = "red",linetype = "dashed",alpha = 0.4)+
+      geom_vline(aes(xintercept = log10(4/3)),
+                 colour = "red",linetype = "dashed",alpha = 0.4)+
+      theme(
+        axis.title = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank()
+      )
+    p_list[[i]] <- p
+  }
+}
+
+p_asu<-ggarrange(p_list[[1]],p_list[[2]],p_list[[3]],p_list[[4]],p_list[[5]],
+                 common.legend = T,legend = "bottom")
+p_asu
+ggsave("4_output/figs/boot_asu.svg",plot = p_asu,width=10,height=8,unit="in")
+
+#Age-sex-rural
+p_list <- list()
+for(i in 1:5){
+  if( i == 3){
+    p<-ggplot(bdf_asur[bdf_asur$strata == "Rural" & bdf_asur$data == 
+                         unique(bdf_asur$data)[i],],
+              aes(x = rr10,group = sex))+
+      geom_histogram(aes(fill = sex),alpha = 0.40,
+                     binwidth = 0.01,closed = "left",position = "identity")+
+      geom_density(aes(y = 0.01 * after_stat(count),color = sex))+
+      facet_grid(rows = vars(age_groups),
+                 cols = vars(data),scales = "free_y")+
+      coord_cartesian(xlim = c(-1,0.48))+
+      scale_x_continuous(name = "RR",
+                         labels = function(x) round(10^x,2),
+                         breaks = plot_breaks)+
+      scale_fill_manual(name = "Sex",values = plot_cols,aesthetics = c("fill","color"))+
+      geom_vline(aes(xintercept = log10(1)),
+                 colour = "black",linetype = "dashed",alpha = 0.4)+
+      geom_vline(aes(xintercept = log10(3/4)),
+                 colour = "red",linetype = "dashed",alpha = 0.4)+
+      geom_vline(aes(xintercept = log10(4/3)),
+                 colour = "red",linetype = "dashed",alpha = 0.4)+
+      theme(
+        axis.title = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank()
+      )
+    p_list[[i]] <- p
+  }
+  else{
+  p<-ggplot(bdf_asur[bdf_asur$strata == "Rural" & bdf_asur$data == 
+                         unique(bdf_asur$data)[i],],
+               aes(x = rr10,group = sex))+
+       geom_histogram(aes(fill = sex),alpha = 0.40,
+                      binwidth = 0.01,closed = "left",position = "identity")+
+       geom_density(aes(y = 0.01 * after_stat(count),color = sex))+
+       facet_grid(rows = vars(age_groups),
+                  cols = vars(data),scales = "free_y")+
+       coord_cartesian(xlim = c(-1,0.48))+
+       scale_x_continuous(name = "RR",
+                          labels = function(x) round(10^x,2),
+                          breaks = plot_breaks)+
+       scale_fill_manual(name = "Sex",values = plot_cols,aesthetics = c("fill","color"))+
+       geom_vline(aes(xintercept = log10(1)),
+                  colour = "black",linetype = "dashed",alpha = 0.4)+
+       geom_vline(aes(xintercept = log10(3/4)),
+                  colour = "red",linetype = "dashed",alpha = 0.4)+
+       geom_vline(aes(xintercept = log10(4/3)),
+                  colour = "red",linetype = "dashed",alpha = 0.4)+
+      theme(
+        axis.title = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank()
+      )
+    p_list[[i]] <- p
+  }
+}
+
+p_asr<-ggarrange(p_list[[1]],p_list[[2]],p_list[[3]],p_list[[4]],p_list[[5]],
+                 common.legend = T,legend = "bottom")
+p_asr
+ggsave("4_output/figs/boot_asr.svg",plot = p_asr,width=10,height=8,unit="in")
+
+#Age-sex-racialized minority
+p_list <- list()
+for(i in c(1:3,5)){
+  if (i == 3){
+    p<-ggplot(bdf_asur[bdf_asur$strata == "Racialized\nminority" & bdf_asur$data == 
+                         unique(bdf_asur$data)[i],],
+              aes(x = rr10,group = sex))+
+      geom_histogram(aes(fill = sex),alpha = 0.40,
+                     binwidth = 0.005,closed = "left",position = "identity")+
+      geom_density(aes(y = 0.005 * after_stat(count),color = sex))+
+      facet_grid(rows = vars(age_groups),
+                 cols = vars(data),scales = "free_y")+
+      coord_cartesian(xlim = c(-1,0.48))+
+      scale_x_continuous(name = "RR",
+                         labels = function(x) round(10^x,2),
+                         breaks = plot_breaks)+
+      scale_fill_manual(name = "Sex",values = plot_cols,aesthetics = c("fill","color"))+
+      geom_vline(aes(xintercept = log10(1)),
+                 colour = "black",linetype = "dashed",alpha = 0.4)+
+      geom_vline(aes(xintercept = log10(3/4)),
+                 colour = "red",linetype = "dashed",alpha = 0.4)+
+      geom_vline(aes(xintercept = log10(4/3)),
+                 colour = "red",linetype = "dashed",alpha = 0.4)+
+      theme(
+        axis.title = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank()
+      )
+    p_list[[i]] <- p
+  }
+  else{
+    p<-ggplot(bdf_asur[bdf_asur$strata == "Racialized\nminority" & bdf_asur$data == 
+                         unique(bdf_asur$data)[i],],
+            aes(x = rr10,group = sex))+
+    geom_histogram(aes(fill = sex),alpha = 0.40,
+                   binwidth = 0.005,closed = "left",position = "identity")+
+    geom_density(aes(y = 0.005 * after_stat(count),color = sex))+
+    facet_grid(rows = vars(age_groups),
+               cols = vars(data),scales = "free_y")+
+    coord_cartesian(xlim = c(-1,0.48))+
+    scale_x_continuous(name = "RR",
+                       labels = function(x) round(10^x,2),
+                       breaks = plot_breaks)+
+    scale_fill_manual(name = "Sex",values = plot_cols,aesthetics = c("fill","color"))+
+    geom_vline(aes(xintercept = log10(1)),
+               colour = "black",linetype = "dashed",alpha = 0.4)+
+    geom_vline(aes(xintercept = log10(3/4)),
+               colour = "red",linetype = "dashed",alpha = 0.4)+
+    geom_vline(aes(xintercept = log10(4/3)),
+               colour = "red",linetype = "dashed",alpha = 0.4)+
+      theme(
+        axis.title = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank()
+      )
+    p_list[[i]] <- p
+  }
+}
+
+p_asrm<-ggarrange(p_list[[1]],p_list[[2]],p_list[[3]],p_list[[5]],
+                 common.legend = T,legend = "bottom")
+p_asrm
+ggsave("4_output/figs/boot_asrm.svg",plot = p_asrm,width=10,height=8,unit="in")
+
+#Age-sex-white
+p_list <- list()
+for(i in c(1:3,5)){
+  if(i == 3){
+  p<-ggplot(bdf_asur[bdf_asur$strata == "White" & bdf_asur$data == 
+                         unique(bdf_asur$data)[i],],
+            aes(x = rr10,group = sex))+
+    geom_histogram(aes(fill = sex),alpha = 0.40,
+                   binwidth = 0.005,
+                   closed = "left",position = "identity")+
+    geom_density(aes(y = 0.005 * after_stat(count),color = sex))+
+    facet_grid(rows = vars(age_groups),
+               cols = vars(data),scales = "free_y")+
+    coord_cartesian(xlim = c(-1,0.48))+
+    scale_x_continuous(name = "RR",
+                       labels = function(x) round(10^x,2),
+                       breaks = plot_breaks)+
+    scale_fill_manual(name = "Sex",values = plot_cols,aesthetics = c("fill","color"))+
+    geom_vline(aes(xintercept = log10(1)),
+               colour = "black",linetype = "dashed",alpha = 0.4)+
+    geom_vline(aes(xintercept = log10(3/4)),
+               colour = "red",linetype = "dashed",alpha = 0.4)+
+    geom_vline(aes(xintercept = log10(4/3)),
+               colour = "red",linetype = "dashed",alpha = 0.4)+
+      theme(
+        axis.title = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank()
+      )
+    p_list[[i]] <- p
+  }
+  else {
+    p<-ggplot(bdf_asur[bdf_asur$strata == "White" & bdf_asur$data == 
+                         unique(bdf_asur$data)[i],],
+              aes(x = rr10,group = sex))+
+      geom_histogram(aes(fill = sex),alpha = 0.40,
+                     binwidth = 0.005,
+                     closed = "left",position = "identity")+
+      geom_density(aes(y = 0.005 * after_stat(count),color = sex))+
+      facet_grid(rows = vars(age_groups),
+                 cols = vars(data),scales = "free_y")+
+      coord_cartesian(xlim = c(-1,0.48))+
+      scale_x_continuous(name = "RR",
+                         labels = function(x) round(10^x,2),
+                         breaks = plot_breaks)+
+      scale_fill_manual(name = "Sex",values = plot_cols,aesthetics = c("fill","color"))+
+      geom_vline(aes(xintercept = log10(1)),
+                 colour = "black",linetype = "dashed",alpha = 0.4)+
+      geom_vline(aes(xintercept = log10(3/4)),
+                 colour = "red",linetype = "dashed",alpha = 0.4)+
+      geom_vline(aes(xintercept = log10(4/3)),
+                 colour = "red",linetype = "dashed",alpha = 0.4)+
+      theme(
+        axis.title = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank()
+      )
+    p_list[[i]] <- p
+  }
+}
+
+p_asw<-ggarrange(p_list[[1]],p_list[[2]],p_list[[3]],p_list[[5]],
+                 common.legend = T,legend = "bottom")
+p_asw
+ggsave("4_output/figs/boot_asw.svg",plot = p_asw,width=10,height=8,unit="in")
