@@ -1,7 +1,6 @@
-"This script bootstraps representativeness ratios produced for 
-each study's demographic strata. A subgroup is considered significantly 
-underrepresented if 95% of the representativeness ratios fall below 
-a threshold of 0.75."
+"This script bootstraps representation ratios produced for 
+the demographic strata of each study except CCAHS-1. We identified subgroups
+which had 95% of representation ratios fall below a threshold of 0.75."
 
 # Load libraries and data -------------------------------------------------
 setwd("~/serosurveillance-cohort-representativeness")
@@ -57,11 +56,12 @@ g_sqs2<-read.csv("./1_data/private/2016 Canadian Census/censussqs_g_clsa_s2.csv"
 #Load functions
 source("2_scripts/00_Helper_Functions.R")
 
-# Bootstrap age-sex-urban representativeness ratios -----------------------
+# Bootstrap age-sex-urban representation ratios -----------------------
 # Setting A (Ab-C)
 n_replicates<-5000 #number of bootstrap iterations
 collect<-NULL
 
+#Restrict Ab-C run to 10 Canadian provinces
 data<-abc_df[abc_df$province != "YT",]
 output<-matrix(NA,nrow = n_replicates,
                ncol = 36)
@@ -151,7 +151,7 @@ abcsum_output<-matrix(NA,nrow = ncol(output),
 for(i in 1:ncol(output)){
   df<-output[,i]
   col_mean<-mean(df) 
-  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.95),
+  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.975),
                        na.rm = T)
   final<-c(col_mean,col_quants)
   abcsum_output[i,]<-final
@@ -159,14 +159,12 @@ for(i in 1:ncol(output)){
 }
 
 abcsum_output<-data.frame(abcsum_output)
-colnames(abcsum_output)<-c("mean","2.5","25","50","75","95")
+colnames(abcsum_output)<-c("mean","2.5","25","50","75","97.5")
 abcsum_output<-cbind(abcsum_output,subcount[,c("age_groups","sex","urban")])
 
 write_csv(output,"./1_data/private/boot_abc_asu_5000_rr.csv")
 write_csv(abc_fin,"./1_data/private/boot_abc_asu_5000.csv")
 write_csv(abcsum_output,"./1_data/private/boot_abc_asu_5000_sumstats.csv")
-
-#Setting B (CCAHS) 
 
 #Setting C (CBS)
 n_replicates<-5000 #number of bootstrap iterations
@@ -259,7 +257,7 @@ cbssum_output<-matrix(NA,nrow = ncol(output),
 for(i in 1:ncol(output)){
   df<-output[,i]
   col_mean<-mean(df)
-  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.95),
+  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.975),
                        na.rm = T)
   final<-c(col_mean,col_quants)
   cbssum_output[i,]<-final
@@ -267,7 +265,7 @@ for(i in 1:ncol(output)){
 }
 
 cbssum_output<-data.frame(cbssum_output)
-colnames(cbssum_output)<-c("mean","2.5","25","50","75","95")
+colnames(cbssum_output)<-c("mean","2.5","25","50","75","97.5")
 cbssum_output<-cbind(cbssum_output,subcount[,c("age_groups","sex","urban")])
 
 write_csv(output,"./1_data/private/boot_cbs_asu_5000_rr.csv")
@@ -365,14 +363,14 @@ cansum_output<-matrix(NA,nrow = ncol(output),
 for(i in 1:ncol(output)){
   df<-output[,i]
   col_mean<-mean(df)
-  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.95),
+  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.975),
                        na.rm = T)
   final<-c(col_mean,col_quants)
   cansum_output[i,]<-final
 }
 
 cansum_output<-data.frame(cansum_output)
-colnames(cansum_output)<-c("mean","2.5","25","50","75","95")
+colnames(cansum_output)<-c("mean","2.5","25","50","75","97.5")
 cansum_output<-cbind(cansum_output,subcount[,c("age_groups","sex","urban")])
 
 write_csv(output,"./1_data/private/boot_can_asu_5000_rr.csv")
@@ -472,7 +470,7 @@ aplsum_output<-matrix(NA,nrow = ncol(output),
 for(i in 1:ncol(output)){
   df<-output[,i]
   col_mean<-mean(df)
-  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.95),
+  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.975),
                        na.rm = T)
   final<-c(col_mean,col_quants)
   aplsum_output[i,]<-final
@@ -480,14 +478,12 @@ for(i in 1:ncol(output)){
 }
 
 aplsum_output<-data.frame(aplsum_output)
-colnames(aplsum_output)<-c("mean","2.5","25","50","75","95")
+colnames(aplsum_output)<-c("mean","2.5","25","50","75","97.5")
 aplsum_output<-cbind(aplsum_output,subcount[,c("age_groups","sex","urban")])
 
 write_csv(output,"./1_data/private/boot_apl_asu_5000_rr.csv")
 write_csv(apl_fin,"./1_data/private/boot_apl_asu_5000.csv")
 write_csv(aplsum_output,"./1_data/private/boot_apl_asu_5000_sumstats.csv")
-
-#Setting F (CCAHS territories)
 
 # Setting G (CLSA)
 n_replicates<-5000 #number of bootstrap iterations
@@ -580,7 +576,7 @@ clsasum_output<-matrix(NA,nrow = ncol(output),
 for(i in 1:ncol(output)){
   df<-output[,i]
   col_mean<-mean(df)
-  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.95),
+  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.975),
                        na.rm = T)
   final<-c(col_mean,col_quants)
   clsasum_output[i,]<-final
@@ -588,20 +584,21 @@ for(i in 1:ncol(output)){
 }
 
 clsasum_output<-data.frame(clsasum_output)
-colnames(clsasum_output)<-c("mean","2.5","25","50","75","95")
+colnames(clsasum_output)<-c("mean","2.5","25","50","75","97.5")
 clsasum_output<-cbind(clsasum_output,subcount[,c("age_groups","sex","urban")])
 
 write_csv(output,"./1_data/private/boot_clsa_asu_5000_rr.csv")
 write_csv(clsa_fin,"./1_data/private/boot_clsa_asu_5000.csv")
 write_csv(clsasum_output,"./1_data/private/boot_clsa_asu_5000_sumstats.csv")
 
-# Bootstrap age-sex-race representativeness ratios ------------------------
+# Bootstrap age-sex-race representation ratios ------------------------
 
 #Setting A (Ab-C)
 n_replicates<-5000 #number of bootstrap iterations
 collect<-NULL
 
 #Manually add in required dataset as "data" and set up .csv at the bottom (saves computational resources)
+#Restrict analysis to 10 Canadian provinces
 data<-abc_df[abc_df$province != "YT",]
 
 output<-matrix(NA,nrow = n_replicates,
@@ -662,7 +659,7 @@ abcrsum_output<-matrix(NA,nrow = ncol(output),
 for(i in 1:ncol(output)){
   df<-output[,i]
   col_mean<-mean(df)
-  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.95),
+  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.975),
                        na.rm = T)
   final<-c(col_mean,col_quants)
   abcrsum_output[i,]<-final
@@ -670,14 +667,12 @@ for(i in 1:ncol(output)){
 }
 
 abcrsum_output<-data.frame(abcrsum_output)
-colnames(abcrsum_output)<-c("mean","2.5","25","50","75","95")
+colnames(abcrsum_output)<-c("mean","2.5","25","50","75","97.5")
 abcrsum_output<-cbind(abcrsum_output,subcount[,c("age_groups","sex","race")])
 
 write_csv(output,"./1_data/private/boot_abc_asr_5000_rr.csv")
 write_csv(abcr_fin,"./1_data/private/boot_abc_asr_5000.csv")
 write_csv(abcrsum_output,"./1_data/boot_abc_asr_5000_sumstats.csv")
-
-#Setting B (CCAHS)
 
 #Setting C (CBS)
 n_replicates<-5000 #number of bootstrap iterations
@@ -743,7 +738,7 @@ cbsrsum_output<-matrix(NA,nrow = ncol(output),
 for(i in 1:ncol(output)){
   df<-output[,i]
   col_mean<-mean(df)
-  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.95),
+  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.975),
                        na.rm = T)
   final<-c(col_mean,col_quants)
   cbsrsum_output[i,]<-final
@@ -751,7 +746,7 @@ for(i in 1:ncol(output)){
 }
 
 cbsrsum_output<-data.frame(cbsrsum_output)
-colnames(cbsrsum_output)<-c("mean","2.5","25","50","75","95")
+colnames(cbsrsum_output)<-c("mean","2.5","25","50","75","97.5")
 cbsrsum_output<-cbind(cbsrsum_output,subcount[,c("age_groups","sex","race")])
 
 write_csv(output,"./1_data/private/boot_cbs_asr_5000_rr.csv")
@@ -822,7 +817,7 @@ canrsum_output<-matrix(NA,nrow = ncol(output),
 for(i in 1:ncol(output)){
   df<-output[,i]
   col_mean<-mean(df)
-  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.95),
+  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.975),
                        na.rm = T)
   final<-c(col_mean,col_quants)
   canrsum_output[i,]<-final
@@ -830,14 +825,12 @@ for(i in 1:ncol(output)){
 }
 
 canrsum_output<-data.frame(canrsum_output)
-colnames(canrsum_output)<-c("mean","2.5","25","50","75","95")
+colnames(canrsum_output)<-c("mean","2.5","25","50","75","97.5")
 canrsum_output<-cbind(canrsum_output,subcount[,c("age_groups","sex","race")])
 
 write_csv(output,"./1_data/private/boot_can_asr_5000_rr.csv")
 write_csv(canr_fin,"./1_data/private/boot_can_asr_5000.csv")
 write_csv(canrsum_output,"./1_data/private/boot_can_asr_5000_sumstats.csv")
-
-#Setting F (CCAHS territories)
 
 #Setting G (CLSA)
 n_replicates<-5000 #number of bootstrap iterations
@@ -904,7 +897,7 @@ clsarsum_output<-matrix(NA,nrow = ncol(output),
 for(i in 1:ncol(output)){
   df<-output[,i]
   col_mean<-mean(df)
-  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.95),
+  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.975),
                        na.rm = T)
   final<-c(col_mean,col_quants)
   clsarsum_output[i,]<-final
@@ -912,7 +905,7 @@ for(i in 1:ncol(output)){
 }
 
 clsarsum_output<-data.frame(clsarsum_output)
-colnames(clsarsum_output)<-c("mean","2.5","25","50","75","95")
+colnames(clsarsum_output)<-c("mean","2.5","25","50","75","97.5")
 clsarsum_output<-cbind(clsarsum_output,subcount[,c("age_groups","sex","race")])
 
 write_csv(output,"./1_data/private/boot_clsa_asr_5000_rr.csv")
@@ -982,7 +975,7 @@ cbsqmsum_output<-matrix(NA,nrow = ncol(output),
 for(i in 1:ncol(output)){
   df<-output[,i]
   col_mean<-mean(df)
-  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.95),
+  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.975),
                        na.rm = T)
   final<-c(col_mean,col_quants)
   cbsqmsum_output[i,]<-final
@@ -990,7 +983,7 @@ for(i in 1:ncol(output)){
 }
 
 cbsqmsum_output<-data.frame(cbsqmsum_output)
-colnames(cbsqmsum_output)<-c("mean","2.5","25","50","75","95")
+colnames(cbsqmsum_output)<-c("mean","2.5","25","50","75","97.5")
 cbsqmsum_output<-cbind(cbsqmsum_output,subcount[,c("sex","quintmat")])
 
 write_csv(output,"./1_data/private/boot_cbs_sqm_5000_rr.csv")
@@ -1058,7 +1051,7 @@ aplqmsum_output<-matrix(NA,nrow = ncol(output),
 for(i in 1:ncol(output)){
   df<-output[,i]
   col_mean<-mean(df)
-  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.95),
+  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.975),
                        na.rm = T)
   final<-c(col_mean,col_quants)
   aplqmsum_output[i,]<-final
@@ -1066,7 +1059,7 @@ for(i in 1:ncol(output)){
 }
 
 aplqmsum_output<-data.frame(aplqmsum_output)
-colnames(aplqmsum_output)<-c("mean","2.5","25","50","75","95")
+colnames(aplqmsum_output)<-c("mean","2.5","25","50","75","97.5")
 aplqmsum_output<-cbind(aplqmsum_output,subcount[,c("sex","quintmat")])
 
 write_csv(output,"./1_data/private/boot_apl_sqm_5000_rr.csv")
@@ -1134,7 +1127,7 @@ clsaqmsum_output<-matrix(NA,nrow = ncol(output),
 for(i in 1:ncol(output)){
   df<-output[,i]
   col_mean<-mean(df)
-  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.95),
+  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.975),
                        na.rm = T)
   final<-c(col_mean,col_quants)
   clsaqmsum_output[i,]<-final
@@ -1142,7 +1135,7 @@ for(i in 1:ncol(output)){
 }
 
 clsaqmsum_output<-data.frame(clsaqmsum_output)
-colnames(clsaqmsum_output)<-c("mean","2.5","25","50","75","95")
+colnames(clsaqmsum_output)<-c("mean","2.5","25","50","75","97.5")
 clsaqmsum_output<-cbind(clsaqmsum_output,subcount[,c("sex","quintmat")])
 
 write_csv(output,"./1_data/private/boot_clsa_sqm_5000_rr.csv")
@@ -1287,7 +1280,7 @@ aplqssum_output<-matrix(NA,nrow = ncol(output),
 for(i in 1:ncol(output)){
   df<-output[,i]
   col_mean<-mean(df)
-  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.95),
+  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.975),
                        na.rm = T)
   final<-c(col_mean,col_quants)
   aplqssum_output[i,]<-final
@@ -1295,7 +1288,7 @@ for(i in 1:ncol(output)){
 }
 
 aplqssum_output<-data.frame(aplqssum_output)
-colnames(aplqssum_output)<-c("mean","2.5","25","50","75","95")
+colnames(aplqssum_output)<-c("mean","2.5","25","50","75","97.5")
 aplqssum_output<-cbind(aplqssum_output,subcount[,c("sex","quintsoc")])
 
 write_csv(output,"./1_data/private/boot_apl_sqs_5000_rr.csv")
@@ -1363,7 +1356,7 @@ clsaqssum_output<-matrix(NA,nrow = ncol(output),
 for(i in 1:ncol(output)){
   df<-output[,i]
   col_mean<-mean(df)
-  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.95),
+  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.975),
                        na.rm = T)
   final<-c(col_mean,col_quants)
   clsaqssum_output[i,]<-final
@@ -1371,79 +1364,12 @@ for(i in 1:ncol(output)){
 }
 
 clsaqssum_output<-data.frame(clsaqssum_output)
-colnames(clsaqssum_output)<-c("mean","2.5","25","50","75","95")
+colnames(clsaqssum_output)<-c("mean","2.5","25","50","75","97.5")
 clsaqssum_output<-cbind(clsaqssum_output,subcount[,c("sex","quintsoc")])
 
 write_csv(output,"./1_data/private/boot_clsa_sqs_5000_rr.csv")
 write_csv(clsaqs_fin,"./1_data/private/boot_clsa_sqs_5000.csv")
 write_csv(clsaqssum_output,"./1_data/private/boot_clsa_sqs_5000_sumstats.csv")
-
-# Bootstrap age-sex representation ratios (territories) -------------------
-#Setting F (CCAHS territories)
-'
-#Setting H (Ab-C territories)
-n_replicates<-5000 #number of bootstrap iterations
-collect<-NULL
-
-data<-abc_df[abc_df$province == "YT",]
-output<-matrix(NA,nrow = n_replicates,
-               ncol = 10)
-
-#Run
-set.seed(4)
-for(i in 1:n_replicates){
-  #draw bootstrap resample
-  df<-data[sample(1:nrow(data),size = nrow(data),replace = T),]
-  
-  #calculate counts by subgroup in resample
-  group<-df %>% 
-    filter(sex != "Self described") %>% 
-    group_by(age_groups,sex) %>% 
-    summarize(count = n()) %>% 
-    ungroup()
-  
-  #merge resample with corresponding census dataset
-  subcount<-merge(group,h_as,by = c("age_groups","sex"),all.y = T)
-  
-  #calculate proportions and RR
-  subcount$count<-ifelse(is.na(subcount$count),0,subcount$count)
-  subcount<-subcount[order(subcount$quintsoc,subcount$sex),]
-  subcount$pct_resample<-c(subcount$count / sum(subcount$count))
-  subcount$pct_pop<-c(subcount$count_census / sum(subcount$count_census))
-  subcount$rr<-subcount$pct_resample / subcount$pct_pop
-  
-  #save output to matrix
-  output[i,]<-subcount$rr
-  print(paste("Run",i,"complete"))
-}
-
-#label columns and make data.frame
-output<-data.frame(output)
-
-#perform calculation and re-assign bootstrap probability to each subgroup combination
-abct_fin<-cbind(subcount[,c("age_groups","sex")],sapply(output,rrfun))
-colnames(abct_fin)[3]<-"rr_prob"
-abct_fin$cohort<-"Ab-C open cohort"
-
-#calculate summary statistics (quantiles,mean)
-abctsum_output<-matrix(NA,nrow = ncol(output),
-                      ncol = 6)
-for(i in 1:ncol(output)){
-  df<-output[,i]
-  col_mean<-mean(df) 
-  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.95),
-                       na.rm = T)
-  final<-c(col_mean,col_quants)
-  abctsum_output[i,]<-final
-  
-}
-
-abctsum_output<-data.frame(abctsum_output)
-colnames(abctsum_output)<-c("mean","2.5","25","50","75","95")
-abctsum_output<-cbind(abctsum_output,subcount[,c("age_groups","sex")])
-
-#write_csv(abct_fin,"./1_data/private/boot_abct_asu_5000.csv")
-#write_csv(abctsum_output,"boot_abct_asu_5000_sumstats.csv")'
 
 # Sensitivity analysis 1: classify mixed race as "White" ------------------
 #Bootstrap age-sex-race representation ratios
@@ -1452,6 +1378,7 @@ n_replicates<-5000 #number of bootstrap iterations
 collect<-NULL
 
 #Manually add in required dataset as "data" and set up .csv at the bottom (saves computational resources)
+#Restrict analysis to 10 Canadian provinces
 data<-abc_df[abc_df$province != "YT",]
 
 output<-matrix(NA,nrow = n_replicates,
@@ -1511,7 +1438,7 @@ abcr1sum_output<-matrix(NA,nrow = ncol(output),
 for(i in 1:ncol(output)){
   df<-output[,i]
   col_mean<-mean(df)
-  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.95),
+  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.975),
                        na.rm = T)
   final<-c(col_mean,col_quants)
   abcr1sum_output[i,]<-final
@@ -1519,7 +1446,7 @@ for(i in 1:ncol(output)){
 }
 
 abcr1sum_output<-data.frame(abcr1sum_output)
-colnames(abcr1sum_output)<-c("mean","2.5","25","50","75","95")
+colnames(abcr1sum_output)<-c("mean","2.5","25","50","75","97.5")
 abcr1sum_output<-cbind(abcr1sum_output,subcount[,c("age_groups","sex","race1")])
 
 #write_csv(abcr1_fin,"./1_data/private/boot_abc_asr1_5000.csv")
@@ -1588,7 +1515,7 @@ canr1sum_output<-matrix(NA,nrow = ncol(output),
 for(i in 1:ncol(output)){
   df<-output[,i]
   col_mean<-mean(df)
-  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.95),
+  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.975),
                        na.rm = T)
   final<-c(col_mean,col_quants)
   canr1sum_output[i,]<-final
@@ -1596,7 +1523,7 @@ for(i in 1:ncol(output)){
 }
 
 canr1sum_output<-data.frame(canr1sum_output)
-colnames(canr1sum_output)<-c("mean","2.5","25","50","75","95")
+colnames(canr1sum_output)<-c("mean","2.5","25","50","75","97.5")
 canr1sum_output<-cbind(canr1sum_output,subcount[,c("age_groups","sex","race1")])
 #write_csv(canr1_fin,"./1_data/private/boot_can_asr1_5000.csv")
 #write_csv(canr1sum_output,"boot_can_asr1_5000_sumstats.csv")
@@ -1666,7 +1593,7 @@ clsar1sum_output<-matrix(NA,nrow = ncol(output),
 for(i in 1:ncol(output)){
   df<-output[,i]
   col_mean<-mean(df)
-  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.95),
+  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.975),
                        na.rm = T)
   final<-c(col_mean,col_quants)
   clsar1sum_output[i,]<-final
@@ -1674,13 +1601,13 @@ for(i in 1:ncol(output)){
 }
 
 clsar1sum_output<-data.frame(clsar1sum_output)
-colnames(clsar1sum_output)<-c("mean","2.5","25","50","75","95")
+colnames(clsar1sum_output)<-c("mean","2.5","25","50","75","97.5")
 clsar1sum_output<-cbind(clsar1sum_output,subcount[,c("age_groups","sex","race1")])
 #write_csv(clsar1_fin,"./1_data/private/boot_clsa_asr1_5000.csv")
 #write_csv(clsar1sum_output,"boot_clsa_asr1_5000_sumstats.csv")
 
 # Sensitivity analysis #2: --------
-#Calculate CLSA and CanPath rep ratios using census datasets that include 
+# Calculate CLSA and CanPath rep ratios using census datasets that include 
 # indigenous individuals in census counts
 #Age-sex-urban
 #Setting D (CanPath)
@@ -1768,14 +1695,14 @@ cansums2_output<-matrix(NA,nrow = ncol(output),
 for(i in 1:ncol(output)){
   df<-output[,i]
   col_mean<-mean(df)
-  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.95),
+  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.975),
                        na.rm = T)
   final<-c(col_mean,col_quants)
   cansums2_output[i,]<-final
 }
 
 cansums2_output<-data.frame(cansums2_output)
-colnames(cansums2_output)<-c("mean","2.5","25","50","75","95")
+colnames(cansums2_output)<-c("mean","2.5","25","50","75","97.5")
 cansums2_output<-cbind(cansums2_output,subcount[,c("age_groups","sex","urban")])
 
 write_csv(can_fins2,"./1_data/private/boot_can_asu_5000_s2.csv")
@@ -1866,7 +1793,7 @@ clsasums2_output<-matrix(NA,nrow = ncol(output),
 for(i in 1:ncol(output)){
   df<-output[,i]
   col_mean<-mean(df)
-  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.95),
+  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.975),
                        na.rm = T)
   final<-c(col_mean,col_quants)
   clsasums2_output[i,]<-final
@@ -1874,7 +1801,7 @@ for(i in 1:ncol(output)){
 }
 
 clsasums2_output<-data.frame(clsasums2_output)
-colnames(clsasums2_output)<-c("mean","2.5","25","50","75","95")
+colnames(clsasums2_output)<-c("mean","2.5","25","50","75","97.5")
 clsasums2_output<-cbind(clsasums2_output,subcount[,c("age_groups","sex","urban")])
 
 write_csv(clsa_fins2,"./1_data/private/boot_clsa_asu_5000_s2.csv")
@@ -1945,7 +1872,7 @@ canrsums2_output<-matrix(NA,nrow = ncol(output),
 for(i in 1:ncol(output)){
   df<-output[,i]
   col_mean<-mean(df)
-  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.95),
+  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.975),
                        na.rm = T)
   final<-c(col_mean,col_quants)
   canrsums2_output[i,]<-final
@@ -1953,7 +1880,7 @@ for(i in 1:ncol(output)){
 }
 
 canrsums2_output<-data.frame(canrsums2_output)
-colnames(canrsums2_output)<-c("mean","2.5","25","50","75","95")
+colnames(canrsums2_output)<-c("mean","2.5","25","50","75","97.5")
 canrsums2_output<-cbind(canrsums2_output,subcount[,c("age_groups","sex","race")])
 #write_csv(canrs2_fin,"./1_data/private/boot_can_asr_5000_s2.csv")
 #write_csv(canrsums2_output,"boot_can_asr_5000_sumstats_s2.csv")
@@ -2023,7 +1950,7 @@ clsarsums2_output<-matrix(NA,nrow = ncol(output),
 for(i in 1:ncol(output)){
   df<-output[,i]
   col_mean<-mean(df)
-  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.95),
+  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.975),
                        na.rm = T)
   final<-c(col_mean,col_quants)
   clsarsums2_output[i,]<-final
@@ -2031,7 +1958,7 @@ for(i in 1:ncol(output)){
 }
 
 clsarsums2_output<-data.frame(clsarsums2_output)
-colnames(clsarsums2_output)<-c("mean","2.5","25","50","75","95")
+colnames(clsarsums2_output)<-c("mean","2.5","25","50","75","97.5")
 clsarsums2_output<-cbind(clsarsums2_output,subcount[,c("age_groups","sex","race")])
 #write_csv(clsars2_fin,"./1_data/private/boot_clsa_asr_5000_s2.csv")
 #write_csv(clsarsums2_output,"boot_clsa_asr_5000_sumstats_s2.csv")
@@ -2098,7 +2025,7 @@ clsaqms2sum_output<-matrix(NA,nrow = ncol(output),
 for(i in 1:ncol(output)){
   df<-output[,i]
   col_mean<-mean(df)
-  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.95),
+  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.975),
                        na.rm = T)
   final<-c(col_mean,col_quants)
   clsaqms2sum_output[i,]<-final
@@ -2106,7 +2033,7 @@ for(i in 1:ncol(output)){
 }
 
 clsaqms2sum_output<-data.frame(clsaqms2sum_output)
-colnames(clsaqms2sum_output)<-c("mean","2.5","25","50","75","95")
+colnames(clsaqms2sum_output)<-c("mean","2.5","25","50","75","97.5")
 clsaqms2sum_output<-cbind(clsaqms2sum_output,subcount[,c("sex","quintmat")])
 #write_csv(clsaqms2_fin,"./1_data/private/boot_clsa_sqm_5000_s2.csv")
 #write_csv(clsaqms2sum_output,"boot_clsa_sqm_5000_sumstats_s2.csv")
@@ -2173,7 +2100,7 @@ clsaqss2sum_output<-matrix(NA,nrow = ncol(output),
 for(i in 1:ncol(output)){
   df<-output[,i]
   col_mean<-mean(df)
-  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.95),
+  col_quants<-quantile(df,probs = c(0.025,0.25,0.50,0.75,0.975),
                        na.rm = T)
   final<-c(col_mean,col_quants)
   clsaqss2sum_output[i,]<-final
@@ -2181,7 +2108,7 @@ for(i in 1:ncol(output)){
 }
 
 clsaqss2sum_output<-data.frame(clsaqss2sum_output)
-colnames(clsaqss2sum_output)<-c("mean","2.5","25","50","75","95")
+colnames(clsaqss2sum_output)<-c("mean","2.5","25","50","75","97.5")
 clsaqss2sum_output<-cbind(clsaqss2sum_output,subcount[,c("sex","quintsoc")])
 #write_csv(clsaqss2_fin,"./1_data/private/boot_clsa_sqs_5000_s2.csv")
 #write_csv(clsaqss2sum_output,"boot_clsa_sqs_5000_sumstats_s2.csv")

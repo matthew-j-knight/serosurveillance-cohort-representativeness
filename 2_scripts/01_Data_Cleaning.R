@@ -26,6 +26,7 @@ cbs_data <- dbReadTable(con, SQL('students.copy_cbs_combined'))
 #Disconnect from database once data is loaded into R
 dbDisconnect(con)
 
+#Backup raw cbs dataset
 #write_csv(cbs_data,'cbs_unmodified_df_backup_final.csv')"
 cbs_data<-read.csv("./1_data/private/CBS/cbs_unmodified_df_backup_final.csv")
 
@@ -191,7 +192,7 @@ cbs_sqs<-cbs_df %>%
 #write_csv(cbs_df,"./1_data/private/cbs_df_final.csv")
 
 # Outpatient Laboratory (APL) ---------------------------------------------
-#Remove participants missing a serology result (n = 6)
+#Remove participants missing a serology result
 apl_data<-apl_data[!(is.na(apl_data$`N-IgG_INTERP`) & is.na(apl_data$`RBD-IgGII_INTERP`)),]
 
 #Remove individuals without a unique participant ID
@@ -364,7 +365,7 @@ for(i in 1:nrow(abc_data)){
   
 }
 
-#Period 1
+#Study period 1
 abc_data1<-abc_data %>% 
   select(rseed,p1_result_sinai,p1_int_month,p1_province,p1_fsa,
          p1_age,p1_qe2,race,race1) %>% 
@@ -827,7 +828,8 @@ df_all_clsa$sampledate<-as.Date(df_all_clsa$start_datetime_COV,tz = "UTC")
 df_all_clsa$month<-floor_date(df_all_clsa$sampledate,
                               unit = "2 months")
 
-#Impute missing fsas/quintmat in antibody dataset with variables from other supplementary datasets
+#Impute missing fsas and neighborhood deprivation quintiles 
+# in antibody dataset with variables from other supplementary datasets
 # (baseline, follow up 1, follow up 2)
 missing_fsa_id<-df_all_clsa[is.na(df_all_clsa$FSA_COVID),"entity_id"] #IDs with missing fsa
 
@@ -847,11 +849,13 @@ colnames(df_clsa_baselinet)[2]<-"fsa"
 df_clsa_fup1c<-read.csv("1_data/private/CLSA/2209005_McGill_ARussell_FUP1_CoPv4_Qx_CANUE_PA_BS_CSD_FSA.csv") %>% 
   select(entity_id,SDC_FSA_COF1,MSD16_10_COF1,MSD16_11_COF1) %>% 
   mutate(measure_t = "fup1") #%>% 
+  #Do not remove NA FSA as these participants may be apply to supply deprivation quintile data
   #filter(!is.na(SDC_FSA_COF1))
 colnames(df_clsa_fup1c)[2:4]<-c("fsa","quintmat","quintsoc")
 df_clsa_fup1t<-read.csv("1_data/private/CLSA/2209005_McGill_ARussell_FUP1_Trav3_Qx_CANUE_FSA_CSD.csv") %>% 
   select(entity_id,SDC_FSA_TRF1,MSD16_10_TRF1,MSD16_11_TRF1) %>% 
   mutate(measure_t = "fup1") #%>% 
+  #Do not remove NA FSA as these participants may be apply to supply deprivation quintile data
   #filter(!is.na(SDC_FSA_TRF1))
 colnames(df_clsa_fup1t)[2:4]<-c("fsa","quintmat","quintsoc")
 #Follow up 2
@@ -1756,7 +1760,7 @@ all_dfs<-all_dfs %>%
          cohort = factor(cohort,levels = c("CBS blood donor","APL outpatient laboratory",
                                            "Ab-c open cohort","Canpath closed cohort",
                                            "CLSA closed cohort")))
-#Add library(tableone) to top and modify below code
+#Create table
 st<-CreateTableOne(data = all_dfs,vars = c("age_groups","quintmat",
                                   "quintsoc","race","sex","urban"),
                strata = "cohort",test = F,smd = F)

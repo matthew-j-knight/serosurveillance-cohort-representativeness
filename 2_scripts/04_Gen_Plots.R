@@ -2,12 +2,10 @@
 
 # Load packages and data -----------------------------------------------------------
 setwd("~/serosurveillance-cohort-representativeness")
-library(ggplot2)
 library(tidyverse)
 library(colorspace)
 library(readxl)
 library(scales)
-library(ggridges)
 library(ggpubr)
 theme_set(theme_bw())
 
@@ -15,49 +13,59 @@ theme_set(theme_bw())
 source("2_scripts/00_Helper_Functions.R")
 
 #CBS
+#Subgroup point estimates
 cbs_asr1<-read.csv("./1_data/private/cbs_asr_final.csv")
 cbs_asu1<-read.csv("./1_data/private/cbs_asu_final.csv")
 cbs_sqm1<-read.csv("./1_data/private/cbs_sqm_final.csv")
 cbs_sqs1<-read.csv("./1_data/private/cbs_sqs_final.csv")
+#Subgorup bootstrap distributions
 basu_cbs<-read.csv("1_data/private/boot_cbs_asu_5000_rr.csv")
 basr_cbs<-read.csv("./1_data/private/boot_cbs_asr_5000_rr.csv")
 bsqm_cbs<-read.csv("./1_data/private/boot_cbs_sqm_5000_rr.csv")
 bsqs_cbs<-read.csv("./1_data/private/boot_cbs_sqs_5000_rr.csv")
 
 #APL
+#Subgroup point estimates
 apl_asu1<-read.csv("./1_data/private/apl_asu_final.csv")
 apl_sqm1<-read.csv("./1_data/private/apl_sqm_final.csv")
 apl_sqs1<-read.csv("./1_data/private/apl_sqs_final.csv")
+#Subgroup bootstrap distributions
 basu_apl<-read.csv("1_data/private/boot_apl_asu_5000_rr.csv")
 bsqm_apl<-read.csv("./1_data/private/boot_apl_sqm_5000_rr.csv")
 bsqs_apl<-read.csv("./1_data/private/boot_apl_sqs_5000_rr.csv")
 
 #Ab-C
+#Subgroup point estimates
 abc_asu1<-read.csv("./1_data/private/abc_asu_final.csv")
 abc_asr1<-read.csv("./1_data/private/abc_asr_final.csv")
 abc_asr2<-read.csv("./1_data/private/abc_asr1_final.csv")
+#Subgroup bootstrap distributions
 basu_abc<-read.csv("1_data/private/boot_abc_asu_5000_rr.csv")
 basr_abc<-read.csv("./1_data/private/boot_abc_asr_5000_rr.csv")
 
 #CLSA
+#Subgroup point estimates
 clsa_asu1<-read.csv("./1_data/private/clsa_asu_final.csv")
 clsa_asr1<-read.csv("./1_data/private/clsa_asr_final.csv")
 clsa_sqm1<-read.csv("./1_data/private/clsa_sqm_final.csv")
 clsa_sqs1<-read.csv("./1_data/private/clsa_sqs_final.csv")
 clsa_asr2<-read.csv("./1_data/private/clsa_asr1_final.csv")
+#Subgroup bootstrap distributions
 basu_clsa<-read.csv("1_data/private/boot_clsa_asu_5000_rr.csv")
 basr_clsa<-read.csv("./1_data/private/boot_clsa_asr_5000_rr.csv")
 bsqm_clsa<-read.csv("./1_data/private/boot_clsa_sqm_5000_rr.csv")
 bsqs_clsa<-read.csv("./1_data/private/boot_clsa_sqs_5000_rr.csv")
 
 #CanPath
+#Subgroup point estimates
 can_asu1<-read.csv("./1_data/private/can_asu_final.csv")
 can_asr1<-read.csv("./1_data/private/can_asr_final.csv")
 can_asr2<-read.csv("./1_data/private/can_asr1_final.csv")
+#Subgroup bootstrap distributions
 basu_can<-read.csv("1_data/private/boot_can_asu_5000_rr.csv")
 basr_can<-read.csv("./1_data/private/boot_can_asr_5000_rr.csv")
 
-#CCAHS-1 run results
+#CCAHS-1 (results obtained separately due to privacy policies)
 ccapop_count<-read_xlsx("./1_data/private/2016 Canadian Census/10285/Sortie_CCAHS_Census_ratio/ccahs1asu.xlsx") %>% 
   mutate(age_groups = ccahs_age(age_groups))
 colnames(ccapop_count)[5]<-"rep_ratio"
@@ -208,22 +216,6 @@ all_dtasu<-all_dtasu %>%
   cohort == "CCAHS-1 closed cohort" ~ "CCAHS-1 closed\ncohort",
   TRUE ~ NA))
 
-#Create pct binned
-all_dtasu$pct_binned<-factor(case_when(
-  all_dtasu$pct <= 0.025 ~ "Proportion \u2264 2.5%",
-  all_dtasu$pct > 0.025 & all_dtasu$pct <= 0.05 ~ "2.5% < Proportion \u2264 5.0%",
-  all_dtasu$pct > 0.05 & all_dtasu$pct <= 0.10 ~ "5.0% < Proportion \u2264 10%",
-  all_dtasu$pct > 0.10 & all_dtasu$pct <= 0.15 ~ "10% < Proportion \u2264 15%",
-  all_dtasu$pct > 0.15 & all_dtasu$pct <= 0.20 ~ "15% < Proportion \u2264 20%",
-  all_dtasu$pct > 0.20 ~ "Proportion > 20%",
-  TRUE ~ NA),
-  levels = c("Proportion \u2264 2.5%",
-             "2.5% < Proportion \u2264 5.0%",
-             "5.0% < Proportion \u2264 10%",
-             "10% < Proportion \u2264 15%",
-             "15% < Proportion \u2264 20%",
-             "Proportion > 20%"))
-
 all_dtasu$cohort<-factor(all_dtasu$cohort,
                          levels = c(
                            "CBS blood\ndonor","APL outpatient\nlaboratory",
@@ -265,27 +257,6 @@ supp_asu<-ggplot(all_dtasu[!all_dtasu$urban == "All regions",],aes(x = sex, y = 
   guides(fill = guide_legend(byrow = TRUE))
 supp_asu
 ggsave("4_output/figs/supp_asu.svg",width=12.5,height=8.5,unit="in")
-
-ggplot(all_dtasu[!all_dtasu$urban == "All regions",],aes(x = sex, y = factor(age_groups,
-                                         levels = c("All ages",
-                                                    "0-17 years",
-                                                    "18-26 years",
-                                                    "27-36 years",
-                                                    "37-46 years",
-                                                    "47-56 years",
-                                                    "57+ years")), 
-                     fill = pct_binned))+
-  geom_tile(color = "black",show.legend = T,linewidth = 0.1)+
-  facet_grid(rows = vars(urban),cols = vars(cohort))+
-  geom_text(aes(label = round(pct,3)),
-            color = "black", size = 3)+
-  scale_fill_discrete(type = blues,na.value = "grey80")+
-  scale_y_discrete(labels = c("All ages" = expression(bold("All ages")),"0-17 years","18-26 years",
-                              "27-36 years","37-46 years","47-56 years",
-                              "57+ years"))+
-  labs(fill = "Proportion",
-       y = "Age Group",
-       x = "Sex")
 
 # -- Heatmap with representation ratios -- 
 #---CBS representation ratio---
@@ -405,19 +376,6 @@ all_dtasr<-all_dtasr %>%
     TRUE ~ NA))
 
 #Plot heatmap with proportion of total specimens each subgroup accounts for
-all_dtasr$pct_binned<-factor(case_when(
-  all_dtasr$pct <= 0.025 ~ "Proportion \u2264 2.5%",
-  all_dtasr$pct > 0.025 & all_dtasr$pct <= 0.05 ~ "2.5% < Proportion \u2264 5.0%",
-  all_dtasr$pct > 0.05 & all_dtasr$pct <= 0.10 ~ "5.0% < Proportion \u2264 10%",
-  all_dtasr$pct > 0.10 & all_dtasr$pct <= 0.15 ~ "10% < Proportion \u2264 15%",
-  all_dtasr$pct > 0.15 ~ "Proportion > 15%",
-  TRUE ~ NA),
-  levels = c("Proportion \u2264 2.5%",
-             "2.5% < Proportion \u2264 5.0%",
-             "5.0% < Proportion \u2264 10%",
-             "10% < Proportion \u2264 15%",
-             "Proportion > 15%"))
-
 all_dtasr$cohort<-factor(all_dtasr$cohort,
                          levels = c(
                            "CBS blood\ndonor","APL outpatient\nlaboratory",
@@ -460,27 +418,6 @@ supp_asr<-ggplot(all_dtasr,aes(x = sex, y = factor(age_groups,
   guides(fill = guide_legend(byrow = TRUE))
 supp_asr
 ggsave("4_output/figs/supp_asr.svg",width=12.5,height=8.5,unit="in")
-
-ggplot(all_dtasr,aes(x = sex, y = factor(age_groups,
-                                         levels = c("All ages",
-                                                    "0-17 years",
-                                                    "18-26 years",
-                                                    "27-36 years",
-                                                    "37-46 years",
-                                                    "47-56 years",
-                                                    "57+ years")), 
-                     fill = pct_binned))+
-  geom_tile(color = "black",show.legend = T,linewidth = 0.1)+
-  scale_fill_discrete(type = blues,na.value = "grey80")+
-  facet_grid(rows = vars(race),cols = vars(cohort))+
-  geom_text(aes(label = round(pct,3)),
-            color = "black", size = 3)+
-  scale_y_discrete(labels = c("All ages" = expression(bold("All ages")),"0-17 years","18-26 years",
-                              "27-36 years","37-46 years","47-56 years",
-                              "57+ years"))+
-  labs(fill = "Proportion",
-       y = "Age Group",
-       x = "Sex")
 
 # -- Heatmap with representation ratio --
 # --- CBS representation ratio ---
@@ -590,20 +527,6 @@ all_dtsqm$count_binned<-factor(case_when(
              "50,000 < Count \u2264 100,000",
              "Count > 100,000"))
 
-#Plot heatmap with proportion of total specimens each subgroup accounts for
-all_dtsqm$pct_binned<-factor(case_when(
-  all_dtsqm$pct <= 0.025 ~ "Proportion \u2264 2.5%",
-  all_dtsqm$pct > 0.025 & all_dtsqm$pct <= 0.05 ~ "2.5% < Proportion \u2264 5.0%",
-  all_dtsqm$pct > 0.05 & all_dtsqm$pct <= 0.10 ~ "5.0% < Proportion \u2264 10%",
-  all_dtsqm$pct > 0.10 & all_dtsqm$pct <= 0.15 ~ "10% < Proportion \u2264 15%",
-  all_dtsqm$pct > 0.15 ~ "Proportion > 15%",
-  TRUE ~ NA),
-  levels = c("Proportion \u2264 2.5%",
-             "2.5% < Proportion \u2264 5.0%",
-             "5.0% < Proportion \u2264 10%",
-             "10% < Proportion \u2264 15%",
-             "Proportion > 15%"))
-
 all_dtsqm<-all_dtsqm %>% 
   mutate(cohort = case_when(
     cohort == "CBS blood donor" ~ "CBS blood\ndonor",
@@ -647,18 +570,6 @@ supp_qm<-ggplot(all_dtsqm,aes(x = sex, y = factor(quintmat,
   guides(fill = guide_legend(byrow = T))
 supp_qm
 ggsave("4_output/figs/supp_sqm.svg",width=5.0,height=4.0,unit="in")
-
-ggplot(all_dtsqm,aes(x = sex, y = factor(quintmat,
-                                         levels = c(1,2,
-                                                    3,4,5)), 
-                     fill = pct_binned))+
-  geom_tile(color = "black",show.legend = T,linewidth = 0.1)+
-  scale_fill_discrete(type = blues[c(1,2,4,6,7)])+
-  facet_grid(cols = vars(cohort))+
-  geom_text(aes(label = round(pct,3)),color = "black",size = 3.0)+
-  labs(fill = "Proportion",
-       y = "Material Deprivation quintile",
-       x = "Sex")
 
 # -- Heatmap with representation ratio --
 # --- CBS representation ratio ---
@@ -751,20 +662,6 @@ all_dtsqs$count_binned<-factor(case_when(
              "50,000 < Count \u2264 100,000",
              "Count > 100,000"))
 
-#Plot heatmap with proportion of total specimens each subgroup accounts for
-all_dtsqs$pct_binned<-factor(case_when(
-  all_dtsqs$pct <= 0.025 ~ "Proportion \u2264 2.5%",
-  all_dtsqs$pct > 0.025 & all_dtsqs$pct <= 0.05 ~ "2.5% < Proportion \u2264 5.0%",
-  all_dtsqs$pct > 0.05 & all_dtsqs$pct <= 0.10 ~ "5.0% < Proportion \u2264 10%",
-  all_dtsqs$pct > 0.10 & all_dtsqs$pct <= 0.15 ~ "10% < Proportion \u2264 15%",
-  all_dtsqs$pct > 0.15 ~ "Proportion > 15%",
-  TRUE ~ NA),
-  levels = c("Proportion \u2264 2.5%",
-             "2.5% < Proportion \u2264 5.0%",
-             "5.0% < Proportion \u2264 10%",
-             "10% < Proportion \u2264 15%",
-             "Proportion > 15%"))
-
 all_dtsqs<-all_dtsqs %>% 
   mutate(cohort = case_when(
     cohort == "CBS blood donor" ~ "CBS blood\ndonor",
@@ -809,18 +706,6 @@ supp_sqs<-ggplot(all_dtsqs,aes(x = sex, y = factor(quintsoc,
   guides(fill = guide_legend(byrow = T))
 supp_sqs
 ggsave("4_output/figs/supp_sqs.svg",width=5.0,height=4.0,unit="in")
-
-ggplot(all_dtsqs,aes(x = sex, y = factor(quintsoc,
-                                         levels = c(1,2,
-                                                    3,4,5)), 
-                     fill = pct_binned))+
-  geom_tile(color = "black",show.legend = T,linewidth = 0.1)+
-  scale_fill_discrete(type = blues[c(1,2,4,6,7)])+
-  facet_grid(cols = vars(cohort))+
-  geom_text(aes(label = round(pct,3)),color = "black",size = 3.0)+
-  labs(fill = "Proportion",
-       y = "Social Deprivation quintile",
-       x = "Sex")
 
 # -- Heatmap with representation ratio --
 # --- CBS representation ratio ---
@@ -1070,7 +955,7 @@ f2_qm<-ggplot(f2_qm,aes(x = sex,y = factor(quintmat,levels = c(1:5)),
   theme(axis.title = element_blank(),
         plot.margin = margin(0.1,0.1,0.1,0.1))
 
-#Combine alternative plots
+#Combine figure 2 and figure 2 quintmat plots together
 g1<-ggplotGrob(f2_p)
 g2<-ggplotGrob(f2_qm)
 w<-g1$heights[1]
@@ -1131,20 +1016,6 @@ all_dtasr1$count_binned<-factor(case_when(
              "20,000 < Count \u2264 50,000",
              "50,000 < Count \u2264 100,000",
              "Count > 100,000"))
-
-#Plot heatmap with proportion of total specimens each subgroup accounts for
-all_dtasr1$pct_binned<-factor(case_when(
-  all_dtasr1$pct <= 0.025 ~ "Proportion \u2264 2.5%",
-  all_dtasr1$pct > 0.025 & all_dtasr1$pct <= 0.05 ~ "2.5% < Proportion \u2264 5.0%",
-  all_dtasr1$pct > 0.05 & all_dtasr1$pct <= 0.10 ~ "5.0% < Proportion \u2264 10%",
-  all_dtasr1$pct > 0.10 & all_dtasr1$pct <= 0.15 ~ "10% < Proportion \u2264 15%",
-  all_dtasr1$pct > 0.15 ~ "Proportion > 15%",
-  TRUE ~ NA),
-  levels = c("Proportion \u2264 2.5%",
-             "2.5% < Proportion \u2264 5.0%",
-             "5.0% < Proportion \u2264 10%",
-             "10% < Proportion \u2264 15%",
-             "Proportion > 15%"))
 
 supp_sensr1<-ggplot(all_dtasr1,aes(x = sex, y = factor(age_groups,
                                           levels = c("All ages",
@@ -1542,8 +1413,7 @@ gridExtra::grid.arrange(g1,g2)
 f2a2<-gridExtra::grid.arrange(g1,g2)
 ggsave("4_output/figs/supp_sens2rr.svg",plot = f2a2,width=7,height=9,unit="in")
 
-# Plot bootstrap distributions --------------------------------------------
-#Plot RR distribution for various strata
+# Plot representation ratio bootstrap distributions --------------------------------------------
 #Compile data into lists for cleaning
 bsu_list<-list(basu_cbs[,31:36],basu_apl[,37:42],
                basu_abc[,31:36],basu_can[,31:36],
@@ -1742,7 +1612,7 @@ bdf_asu<-do.call("rbind",list(basu_df1,basu_df2,basu_df3))
 bdf_asr<-do.call("rbind",list(basr_df1,basr_df2))
 bdf_asur<-do.call("rbind",list(bdf_asu,bdf_asr)) #final df
 
-#Transform RR to log10 scale & pseudo-adjust -Inf values for visualization
+#Apply lower bound to RRs (transform RR < 0.1 to 0.1) and transform to log10 scale for plotting
 bdf_sur$rr<-ifelse(bdf_sur$rr < 0.1,0.1,bdf_sur$rr) #for histogram
 bdf_sur$rr10<-log10(bdf_sur$rr)
 bdf_asur$rr<-ifelse(bdf_asur$rr < 0.1,0.1,bdf_asur$rr)
@@ -1752,7 +1622,7 @@ bsqm_df$rr10<-log10(bsqm_df$rr)
 bsqs_df$rr<-ifelse(bsqs_df$rr < 0.1,0.1,bsqs_df$rr)
 bsqs_df$rr10<-log10(bsqs_df$rr)
 
-#Sex,Sex-urban,Sex-ethnicity
+#Sex,Sex-urban,Sex-ethnicity plot
 plot_breaks <- c(-1,#-0.9,
                  -0.775,#-0.65,
                  -0.525,#-0.4,
@@ -1824,7 +1694,7 @@ p_sur<-ggarrange(p_list[[1]],p_list[[2]],p_list[[3]],p_list[[4]],p_list[[5]],
 p_sur
 ggsave("4_output/figs/boot_sur.svg",plot = p_sur,width=11,height=9,unit="in")
 
-#Sex-quintmat
+#Sex-quintmat plot
 p_list <- list()
 for(i in 1:3){
   p<-ggplot(bsqm_df[bsqm_df$data == unique(bsqm_df$data)[i],],
@@ -1856,7 +1726,7 @@ p_sqm<-ggarrange(p_list[[1]],p_list[[2]],p_list[[3]],
 p_sqm
 ggsave("4_output/figs/boot_sqm.svg",plot = p_sqm,width=8,height=6,unit="in")
 
-#Sex-quintsoc
+#Sex-quintsoc plot
 p_list <- list()
 for(i in 1:3){
   p<-ggplot(bsqs_df[bsqs_df$data == unique(bsqs_df$data)[i],],
@@ -1888,7 +1758,7 @@ p_sqs<-ggarrange(p_list[[1]],p_list[[2]],p_list[[3]],
 p_sqs
 ggsave("4_output/figs/boot_sqs.svg",plot = p_sqs,width=8,height=6,unit="in")
 
-#Age-sex-all - check syntax before publishing
+#Age-sex-all - add later (double check syntax)
 p_list <- list()
 for(i in 1:5){
   if (i == 3){  
@@ -1949,7 +1819,7 @@ p_asa<-ggarrange(p_list[[1]],p_list[[2]],p_list[[3]],p_list[[4]],p_list[[5]],
 p_asa
 ggsave("4_output/figs/boot_asa.svg",plot = p_asa,width=10.5,height=10,unit="in")
 
-#Age-sex-urban
+#Age-sex-urban plot
 p_list <- list()
 for(i in 1:5){
   if ( i == 3){  
@@ -2011,7 +1881,7 @@ p_asu<-ggarrange(p_list[[1]],p_list[[2]],p_list[[3]],p_list[[4]],p_list[[5]],
 p_asu
 ggsave("4_output/figs/boot_asu.svg",plot = p_asu,width=10,height=8,unit="in")
 
-#Age-sex-rural
+#Age-sex-rural plot
 p_list <- list()
 for(i in 1:5){
   if( i == 3){
@@ -2075,7 +1945,7 @@ p_asr<-ggarrange(p_list[[1]],p_list[[2]],p_list[[3]],p_list[[4]],p_list[[5]],
 p_asr
 ggsave("4_output/figs/boot_asr.svg",plot = p_asr,width=10,height=8,unit="in")
 
-#Age-sex-racialized minority
+#Age-sex-racialized minority plot
 p_list <- list()
 for(i in c(1:3,5)){
   if (i == 3){
@@ -2139,7 +2009,7 @@ p_asrm<-ggarrange(p_list[[1]],p_list[[2]],p_list[[3]],p_list[[5]],
 p_asrm
 ggsave("4_output/figs/boot_asrm.svg",plot = p_asrm,width=10,height=8,unit="in")
 
-#Age-sex-white
+#Age-sex-white plot
 p_list <- list()
 for(i in c(1:3,5)){
   if(i == 3){

@@ -130,7 +130,7 @@ df<-data.frame(Cohort = c("CBS blood donor (1,035,580)",
                                      clsa_countasr,can_countasr),
                Age_Sex_Race_Urban_Prov = c(cbs_countasur,NA,abc_countasur,
                                            clsa_countasur,can_countasur))
-#Clean CCAHS-1 run and add to df
+#Clean CCAHS-1 run and add to df (CCAHS-1 analysis was run separately due to privacy policies)
 ccahs1_out$Cohort<-"CCAHS-1 closed cohort (11,050)"
 ccahs1_out[,4:7]<-lapply(ccahs1_out[,4:7], function(x){
   x<-round(as.numeric(x,2))
@@ -200,7 +200,7 @@ df1<-data.frame(Cohort = c("CBS blood donor (1,035,580)",
                Age_Sex_Race_Urban_Prov = c(cbs_countasur,NA,abc_countasur1,
                                            clsa_countasur1,can_countasur1))
 
-#Clean CCAHS-1 sensitivity analysis and add to df
+#Clean CCAHS-1 sensitivity analysis and add to df (CCAHS-1 analysis was run separately due to privacy policies)
 ccahs1_outs$Cohort<-"CCAHS-1 closed cohort (11,050)"
 ccahs1_outs[,4:5]<-lapply(ccahs1_outs[,4:5], function(x){
   x<-round(as.numeric(x,2))

@@ -154,28 +154,13 @@ w<-c("white newfoundlander","White British",
      "canadien francais, caucasien","european caucasian",
      "white celtic")
 
-#Classify rep ratio as either underrepresented, well represented, or overrepresented
-rr_binned_fun<-function(x){#input rep ratio column
-  x<-case_when(
-    x < 1/2 ~ "Strongly underrepresented (RR < 1/2)",
-    x >= 1/2 & 
-      x < 3/4 ~  "Moderately underrepresented (1/2 \u2264 RR < 3/4)",
-    x >= 3/4 & 
-      x <= 4/3 ~ "Adequately represented (3/4 \u2264 RR \u2264 4/3)",
-    x > 4/3 & 
-      x <= 2.00 ~  "Moderately overrepresented (4/3 < RR \u2264 2)",
-    x > 2.00 ~ "Strongly overrepresented (RR > 2)",
-    TRUE ~ NA
-  )
-}
-
 #Change value "NA" to "Missing" for supplemental table
 sup_fun<-function(x){
   x<-ifelse(is.na(x) | x == "pnts","Missing",x)
   return(x)
 }
 
-#Clean datasets before plotting
+#Functions to clean datasets before plotting
 asu_clean<-function(df){
   df<-df[c(which(df$urban != "All regions" & 
                    df$age_groups != "All ages"),
