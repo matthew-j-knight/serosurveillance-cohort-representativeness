@@ -1,0 +1,482 @@
+---
+title: "Sociodemographic characteristics of COVID-19 serosurveillance studies with diverse recruitment strategies"
+execute: 
+  echo: false
+format:
+  docx:
+    reference-doc: word-style-reference-manuscript.docx
+  html: default
+bibliography: serosurveillance_cohort_rep_bib.bib
+csl: vancouver-brackets-no-et-al.csl
+editor: visual
+crossref: 
+  thm-title: "Table"
+  thm-prefix: "Table"
+  cor-title: "**Table S**"
+  cor-prefix: "Table S"
+  lem-title: "Figure S"
+  lem-prefix: "Figure S"
+  fig-title: "**Figure**"
+---
+
+```{=html}
+<!---
+
+NOTES:
+-   To render both word and HTML, type this into terminal
+
+quarto render 5_manuscript/manuscript.qmd
+
+-   There are limits in cross-referencing in Quarto. The table
+    Caption doesn't work well with flextable package, and 
+    There's no option for secondary (supplemental) series of 
+    tables or figures. As workaround, I've repurpose other
+    series (theorems, lemmas).I'm using
+        @thm- for tables (Table X)
+        @cor- for supplemental tables (Table SX)
+        @lem- for supplemental figures (Figure SX)
+  The space between "S" and the number for supplemental figures seems unavoidable
+   for now. Can manually correct before submitting to journal.
+        
+Flextable package isn't playing nicely with quarto for crossreferencing at the 
+moment, which is why I'm using @thm- to crossreference tables. But it's being
+actively worked on. To install latest package version, use 
+
+  devtools::install_github("davidgohel/flextable")
+  
+Issue threads:
+https://github.com/quarto-dev/quarto-cli/issues/1556
+https://github.com/davidgohel/flextable/issues/494
+
+--->
+```
+Matthew J. Knight^1^, Yuan Yu^1^, Jiacheng Chen^1^, Sheila O'Brien^2,3^, David L. Buckeridge^1,4^, Carmen Charlton^5,6^, W. Alton Russell^1,4^
+
+<br>
+
+^1^School of Population and Global Health, McGill University, Montreal, Canada
+
+^2^Canadian Blood Services, Ottawa, Canada
+
+^3^School of Epidemiology and Public Health, University of Ottawa, Ottawa, Canada
+
+^4^COVID-19 Immunity Task Force, Montreal, Canada
+
+^5^Canadian Blood Services, Edmonton, Canada
+
+^6^Department of Laboratory Medicine and Pathology, University of Alberta, Edmonton, Canada
+
+<br>
+
+**Corresponding author:** Matthew J. Knight [matthew.knight\@mail.mcgill.ca](mailto:matthew.knight@mail.mcgill.ca), +1-613-854-9571 Suite 1200, 2001 McGill College Avenue, Montreal, QC, Canada H3A 1G1
+
+{{< pagebreak >}}
+
+```{r setup, include=FALSE}
+library(ggplot2) #plots
+library(data.table) #use datatables instead of frames
+library(scales) #format plot legends and text
+library(readxl) #read.excel
+#library(flextable) #format tables for display
+library(tidyverse)
+# library(ftExtra)
+# library(officedown) #formatting for word
+# library(officer)
+# library(stringr)
+theme_set(theme_bw())
+
+```
+
+# Abstract
+
+**Background**. Serological testing was a key component of SARS-CoV-2 surveillance. Social distancing interventions, resource limitations, and the need for timely data led to serosurveillance studies using a range of recruitment strategies, which likely influenced study representativeness. Characterizing representativeness in surveillance is crucial to identify gaps in sampling coverage and to assess health inequities.
+
+**Aim**. To assess the sociodemographic representativeness of Canadian SARS-CoV-2 serosurveillance research studies.
+
+**Methods**. We analyzed three pre-existing longitudinal cohorts, two convenience samples using residual blood, and one de novo probabilistic survey conducted between April 2020 -- November 2023. We calculated study specimen counts by age, sex, urbanicity, race/ethnicity, and neighborhood deprivation quintiles. We derived a 'representation ratio' as a simple metric to assess generalizability to a target population and various sociodemographic strata
+
+**Results**. The six studies included 1,321,675 specimens. When stratifying by age group and sex, 65% of racialized minority subgroups were moderately underrepresented (representation ratio \< 0.75). Representation was generally higher for older Canadians, urban neighborhoods, and neighborhoods with low material deprivation. Rural representation was highest in a study that used outpatient laboratory blood specimens. Racialized minority representation was highest in a de novo probabilistic survey cohort.
+
+**Conclusions**. While no study had adequate representation of all subgroups, less traditional recruitment strategies were more representative of some population dimensions. Understanding demographic representativeness and barriers to recruitment are important considerations when designing population health surveillance studies.
+
+{{< pagebreak >}}
+
+# Introduction
+
+Serological surveillance is a critical input to infectious disease control, including pandemic preparedness and response. In 2020, like many countries, Canada launched the largest serological surveillance program in its history to monitor population immunity to severe acute respiratory syndrome coronavirus-2 (SARS-CoV-2), informing COVID-19 epidemiology and antibody dynamics. Between April 2020 and February 2021, many studies began testing blood specimens for SARS-CoV-2 antibodies [@obrien_cross-canada_2023; @charlton_pre-vaccine_2021; @jha_prabhat_action_nodate; @canadian_longitudinal_study_on_aging_data_2024; @canadian_partnership_for_tomorrows_health_covid-19_nodate; @statistics_canada_canadian_2020]. Challenged by social distancing measures to curb the coronavirus disease 2019 (COVID-19) pandemic, studies used diverse strategies to recruit participants or obtain residual blood samples for testing. Recruitment strategy shapes a study population's characteristics and the extent to which study participants represent the general population [@cornesse_is_2018].
+
+<br>
+
+Serosurveillance studies can be broadly categorized as convenience samples, de novo probabilistic surveys, or pre-existing longitudinal cohorts. For SARS-CoV-2 serosurveillance, many countries used convenience samples of residual blood specimens due to low operational costs and ease of continued sample collection over time [@offergeld_monitoring_2023; @bogogiannidou_repeated_2020; @charlton_pre-vaccine_2021; @obrien_cross-canada_2023]. These study designs may be prone to selection bias if certain subpopulations are poorly represented or ineligible to be sampled [@obrien_cross-canada_2023; @offergeld_monitoring_2023]. Probabilistic serosurveys can mitigate selection biases by using stratified, weight-based approaches to recruitment, while de novo designs allow tailoring recruitment to study objectives. Probabilistic serosurveys were successfully deployed to monitor SARS-CoV-2 in multiple countries [@perez-gomez_sars-cov-2_2023; @ward_design_2023; @tang_assessment_2022; @canadian_longitudinal_study_on_aging_data_2024; @canadian_partnership_for_tomorrows_health_covid-19_nodate]. However, these designs are time-intensive, require many resources, and are sometimes limited by low response rates [@patel_severe_2022; @statistics_canada_canadian_2020]. Sampling within pre-existing longitudinal cohorts can improve efficiency by leveraging an established sampling frame and study infrastructure. But, this precludes tailoring the sampling frame to the current research question, and generalizability may be limited by restrictive inclusion criteria or attrition.
+
+<br>
+
+In this study, we introduce a simple metric for diagnosing the representativeness of subgroups within a study population. Using this metric, we evaluated the sociodemographic representativeness of six SARS-CoV-2 serosurveillance studies with diverse recruitment strategies by age, sex, race/ethnicity, urbanicity, and neighborhood measures of socioeconomic deprivation. 
+
+<br>
+
+# Methods
+
+## Data
+
+We assessed representativeness by analyzing demographic data from six Canadian study populations (Table 1). Here, we define a study to be representative if the sociodemographic composition of the study population matches that of the census-based target population; we make no assumptions of the underlying sampling mechanism or whether inferences from the study population are representative. This similarity suggests the interpretation of an effect measure may be generalizable to the target population, but does not assume the quantitative effect estimate, within a given uncertainty interval, will be identical between the study and target populations [@rudolph_defining_2023]. Studies' recruitment strategies included one fully de novo cross-sectional probabilistic sample (the Canadian COVID-19 Antibody and Health Survey 1 \[CCAHS-1\]), one open longitudinal cohort recruited from a marketing research panel (Action to Beat Coronavirus \[Ab-C\]), two pre-existing closed longitudinal cohorts (the Canadian Longitudinal Study on Aging COVID-19 Antibody Study \[CLSA\], the Canadian Partnership for Tomorrow's Health COVID-19 Antibody Study \[CanPath\]), and two serial cross-sectional convenience samples that used residual blood from blood donations (Canadian Blood Services \[CBS\]) and from specimens collected for outpatient laboratory testing (Alberta Precision Laboratories \[APL\]). The included studies tested specimens collected from April 2020 to November 2023 with sample sizes ranging from 11,050 (CCAHS-1) to 1,039,298 (CBS). Inclusion criteria and enrollment procedures for each study have been described previously [@obrien_cross-canada_2023; @charlton_pre-vaccine_2021; @tang_assessment_2022; @raina_cohort_2019; @dummer_canadian_2018; @statistics_canada_canadian_2020].
+
+<br>
+
+From each dataset, we extracted participants' age, sex, postal code, date of specimen collection, and self-reported race/ethnicity. The first three digits of postal code were used to classify participants' residence as urban or rural and the full postal code was used to assign participants' neighborhood to a quintile of the Pampalon material and social deprivation indices [@pampalon_area-based_2012]. Material deprivation is a composite measure of education, employment, and income reflecting access to essential material resources. Social deprivation is a composite measure of people living alone, single-parent families, and people who are either separated, divorced, and/or widowed, reflecting the fragility of social networks. Both index measures are derived from the 2016 Canadian census [@statistics_canada_census_2017]. When available, the date of specimen collection was used as the sample date (CBS, APL); otherwise, we used the date of questionnaire completion (CanPath, CCAHS-1, CLSA) or specimen receipt (Ab-C).
+
+<br>
+
+Race/ethnicity information was unavailable for the APL study. Deprivation indices were available for the CBS, APL, CCAHS-1, and CLSA studies. Specimen counts for the CCAHS-1 study were rounded to base 2000 in accordance with data usage guidelines. Age was calculated as the age at specimen collection (Ab-C, APL, CBS) or questionnaire completion (CanPath, CLSA, CCAHS-1) and categorized as 0-17 years, 18-26 years, 27-36 years, 37-46 years, 47-56 years, or 57 years and older. For Ab-C specimens collected between December 2020 -- April 2021 and July 2021 -- September 2021, we used the 2019 baseline age since the age at current collection could not be calculated. We categorized sex as male or female and excluded participants who provided alternative responses (n = 138 \[Ab-C\]) from all analyses involving participant sex. Because race/ethnicity data collection varied between studies and differed from census categorization, we re-classified participants as 'white' and 'racialized minority' and did not analyze specific racialized minority groups (Supplementary Tables S1-S2). For studies allowing multiple encounters with participants, we imputed missing variables when available for another encounter (CBS, Ab-C, CLSA). We classified participants who identified as both white and a racialized minority as a racialized minority, and we considered Indigenous identities as a racialized minority but conducted sensitivity analyses with different classifications. Because only CCAHS-1 collected specimens from the capital cities of the Canadian territories, we restricted our primary analysis to specimens collected from Canadian provinces but assessed territorial representativeness for CCAHS-1 separately. We excluded participants who did not meet the inclusion criteria of their respective study and who were missing age, province/territory of residence, or serology test result data. For the CBS study, we did not assess the representativeness of the 0--17-year-old age group because there were no donors younger than 17. We calculated specimen counts using complete cases within each set of demographic strata (e.g., participants missing race/ethnicity were excluded when stratifying by age, sex, and race/ethnicity but not when stratifying by age, sex, and urbanicity). 
+
+<br>
+
+## Representation ratio analysis
+
+To assess the representativeness of subgroups defined by one or more sociodemographic variable, we derived a representation ratio by dividing the proportion of study specimens in a sociodemographic subgroup by the proportion of people in the corresponding subgroup from a target population. A representation ratio less than one indicates the group is underrepresented relative to the target population, and a ratio greater than one indicates overrepresentation. We defined the target subgroup distribution using weighted 2016 Canadian census counts [@statistics_canada_census_2017], restricting by age and province/territory to match each studies' inclusion criteria (Table 1) and rounded to the nearest multiple of zero or five. We calculated representation ratios on unweighted study populations to assess the unadjusted sociodemographic composition of each study except for CCAHS-1, which was designed to be representative only after statistical calibration with a supplemental administrative dataset, due to restrictions on conducting unweighted analyses [@statistics_canada_canadian_2020]. For the target distributions, race/ethnicity counts were derived using the Census population group variable.[@statistics_canada_census_2017] We did not classify Indigenous-identifying individuals as racialized minorities for the CLSA and CanPath studies since data on Indigenous status was unavailable in other studies. We performed bootstrapping (n = 5000) to generate a distribution of uncertainty for each representation ratio.
+
+<br>
+
+## Sample count by strata analysis
+
+In some cases, statistical adjustment or subsampling may allow derivation of representative population statistics from large but unbalanced study populations if there are sufficient samples from less represented strata [@downes_multilevel_2020]. To inform whether this would be feasible in our study populations, we assessed the number of strata with counts greater than 25 when grouped by age, sex, urbanicity, race/ethnicity, and date of specimen collection binned into two-month intervals. All analyses were conducted in R version 4.3.1 [@r_core_2023]. Analytical code will be available in a public repository upon publication. This study was approved by the McGill Faculty of Medicine and Health Sciences Institutional Review Board.
+
+<br>
+
+# Results
+
+## Study population
+
+During data pre-processing, we excluded 3,718 observations for CBS (0.4%), 3,871 for APL (1.8%), 2,052 for Ab-C (7.6%), 2,024 for CLSA (10.5%), and 4,258 for CanPath (16.4%) due to missing data or failure to meet study inclusion criteria. We analyzed the remaining 1,035,580 (CBS), 210,905 (APL), 25,110 (Ab-C), 21,720 (CanPath), 17,310 (CLSA), and 11,050 (CCAHS-1) observations (Supplementary Table S3). For the Ab-C, CLSA, and CanPath studies, the minimum age of participants included in our analysis (Table 1) was older than the minimum age specified in their inclusion criteria [@tang_assessment_2022; @raina_cohort_2019; @dummer_canadian_2018]. Across studies, the largest number of observations were in the 57 and older age group (34.4% \[CCAHS-1\] -- 91.4% \[CLSA\]). Observations for the 18-26-year-old age group were generally low (0.0% \[CanPath\] -- 5.6% \[APL\]) with the exception of CBS (10.6%) and CCAHS-1 (11.8%). Among studies for which neighborhood deprivation was available, specimen counts across social deprivation quintile were balanced, but only 8.2% (CBS), 8.4% (APL), 9.6% (CLSA), and 13.1% (CCAHS-1) of specimens were provided from the most materially deprived quintile of neighborhoods. Across studies, most observations were for participants who self-identified as white (78.2% \[Ab-C\] -- 94.7% \[CLSA\]) and female (52.3% \[CLSA\] -- 65.6% \[CanPath\]), except that 58.2% of CBS observations were from males. Rural specimens accounted for 8.6% (CanPath) -- 17.6% (CCAHS-1) of all specimens across studies. Convenience samples collected substantially more specimens for each demographic strata compared to other recruitment strategies (Supplementary Figures S1-S4). 
+
+<br>
+
+## Representation ratio analysis
+
+Studies had reasonable representation across sexes (representation ratio 0.7-1.3; Figure 1) and, when available, by social deprivation (Supplementary Figure S5). In all studies, racialized minority subgroups were underrepresented (representation ratio \< 1) for some age and sex strata (Figure 2). Racialized minority representation, while still low, was often better in older age groups (Ab-C, CanPath, and CLSA). In contrast, racialized minority representation was better for younger age groups among women for CBS. Urban regions produced larger representation ratios by age and sex strata than rural regions in all studies (Figures 1-2). While APL had reasonable representation of all quintiles of material deprivation and of rural residents (representation ratio 0.8-1.3), the CBS population skewed towards less materially deprived neighborhoods and urban regions (though rural representation for CBS was higher than the three longitudinal cohort studies). 18-26-year-old males were underrepresented across most sex and urbanicity strata in all studies for which they were eligible to be sampled. 
+
+<br>
+
+Among 18--46-year-olds, specimens collected from the Ab-C open cohort produced larger representation ratios across sex and urbanicity strata compared to CanPath (Figure 2). Representation ratios of 18-46-year-old rural residents were generally larger across age and sex strata in the CCAHS-1 study than several studies with probabilistic recruitment strategies (Ab-C, CanPath). Racialized minorities aged 47 years and older were sufficiently represented (representation ratio 0.8-1.3) in the Ab-C open cohort but were underrepresented in the CanPath and CLSA closed cohorts, except for males aged 57 and older in the CanPath study. Of the two convenience samples, the CBS study was more representative of participants aged 18-46 across sex and urbanicity strata, whereas the APL study was more representative of individuals aged 47 and older. In CCAHS-1, the only study that sampled in the three Canadian territories, 0-17-year-olds were underrepresented across sexes in territorial specimens (Supplementary Figure S6). Bootstrapping revealed low uncertainty in whether a representation ratio was greater or less than one for most subgroups (Supplementary Figures S7-S13). A sensitivity analysis reclassifying mixed race/ethnicity study participants as white had little impact on findings, except that all racialized minority subgroups in the Ab-C open cohort that were generally well represented (Figure 2) became underrepresented because racialized minority counts decreased by 55% (Supplementary Figures S14-S15). A sensitivity analysis in which the denominator for CLSA and CanPath representation ratios included Indigenous-identifying individuals as racialized minorities had little impact on findings (Supplementary Figure S16). 
+
+<br>
+
+## Sample count analysis
+
+The convenience samples with large overall sample size produced substantially more cells with counts greater than 25 across 4 levels of stratification compared to all other study designs in the primary analysis (Table 2) and in sensitivity analysis (Supplementary Table S4). Among studies with probabilistic recruitment strategies, studies using pre-existing closed cohorts (CLSA, CanPath) produced a greater proportion of cells with counts greater than 25 than other probabilistic recruitment strategies (Ab-C, CCAHS-1) for all strata. 
+
+<br>
+
+# Discussion
+
+In this study, we developed and applied a simple method for measuring representativeness to describe the variability in sociodemographic representativeness across six SARS-CoV-2 serosurveillance studies using diverse recruitment strategies. No study was adequately representative of all sociodemographic subgroups.  
+
+ <br>
+
+Representation ratios are a flexible diagnostic measure for characterizing study populations. Ratios can consider any combination of characteristics for which reliable estimates of their distribution in a target population are available. Ratios can be used to compare study populations, even when target populations differ, and can be estimated before and after application of sample weights. Notably, representation ratios do not provide insights into the relationship between participant characteristics and a study's estimand, and do not address unmeasured confounding within subgroups. When developing a surveillance study, the other methods must be used to evaluate the impact of recruitment strategy considering the research question and pathogen(s) of interest. 
+
+<br>
+
+Probabilistically sampled surveys have traditionally been considered the 'gold standard' for obtaining representative samples [@cornesse_is_2018]. Use of administrative datasets to construct sampling frames for large population survey studies often provides superior population coverage compared to non-probability samples that rely on participant self-selection. The underlying statistical framework also permits estimation of sampling errors and characteristics associated with non-response [@lindan_design_2022]. While resource constraints may limit the ability of probabilistic designs to perform repeated specimen collection, non-probability sampling within continuous streams of residual blood specimens, such as blood donors, may be more feasible for modelling longitudinal trends, which can also incorporate complex geographic structures [@yu_temporal_2024]. The generalizability of probabilistic designs may also be limited if differences between respondents and non-respondents are non-random [@cornesse_is_2018]. Bias may be introduced via a 'healthy volunteer' effect whereby cohort participants are healthier than the general population [@froom_healthy_1999], similar to the 'healthy donor' bias documented in blood donor research cohorts [@atsma_healthy_2011]. Where available, response rates of the included studies were fairly low (23% \[CCAHS-1\], 25% \[Ab-C\] [@tang_assessment_2022; @statistics_canada_canadian_2020]; these response rates exclude individuals who completed a questionnaire but did not provide a blood sample). This suggests non-response bias could partially explain some of the observed differences in representativeness between study designs. The above response rates are consistent with other probabilistic serosurveys [@ward_design_2023], although response rates as high as 69% have been reported [@perez-gomez_sars-cov-2_2023].
+
+<br>
+
+The emergence of SARS-CoV-2 produced a dire need for accurate, timely epidemiological data to assess population burden and inform decision-making. In response, a set of standardized protocols, commonly known as the Unity studies, were rapidly disseminated by the World Health Organization to guide countries' investigation of population parameters including household transmission, vaccine effectiveness, and population seroprevalence [@bergeri_early_2022]. Studies of blood donor and residual sera populations composed a moderate proportion of all seroprevalence studies following the Unity population-based, age-stratified seroepidemiological investigation (SEROPREV) protocol [@bergeri_global_2022]. Blood donors have traditionally been dismissed as a population for public health surveillance, while the potential for expanded screening of residual outpatient laboratory samples remains unclear. Our findings suggest they are representative along multiple sociodemographic dimensions relative to the general population. For low- and middle-income countries with limited operational resources, leveraging such pre-existing residual blood study populations may provide a cost-effective avenue to obtain representative data. Future studies should evaluate the potential of linking surveillance cohorts to administrative datasets to improve characterization of representativeness and derivation of statistical weights for adjustment. Gaps in demographic representation may be overcome by synthesizing data from multiple surveillance streams, though differences in choice of assay, use of venous blood draws or dried blood samples, and the format or availability of variables can curtail the ability to synthesize data across studies [@mulchandani_use_2021; @patel_comparative_2021].
+
+<br>
+
+Racialized minorities were underrepresented (representation ratio \< 1) across all studies included in our analysis. Language barriers and skepticism of research or medical institutions may contribute to poor representation of these populations [@etti_ethnic_2021; @bonevski_reaching_2014]. While use of stratified random sampling or sampling weights may improve sample representativeness to the target population, they fail to address the underlying individual and societal factors governing participation in health research. Direct engagement and collaboration with community members throughout the research cycle may help mitigate these recruitment barriers by facilitating trust, reducing misinformation, and ensuring study materials are accessible [@ekezie_views_2021; @bonevski_reaching_2014]. Racialized minorities may be better represented in healthcare cohorts like APL [@anand_prevalence_2020], though a lack of race-based data in Canadian administrative healthcare datasets may make this difficult to measure [@khan_are_2017]. Notably, representation of racialized minorities improved as age increased in most studies requiring participant opt-in (Ab-C, CLSA, CanPath), but young minorities exhibited better representativeness compared to older subgroups in the CBS study. Lack of a standardized definition of participant race/ethnicity impeded comparison across studies and prevented assessment of representativeness by specific minority group. 
+
+<br> Several other dimensions of representativeness varied across studies. The Ab-C open cohort was substantially more representative of participants aged 18-46 years old across sex and urbanicity strata compared to the CanPath longitudinal closed cohort (Figure 2). Given both the CLSA and CanPath studies began recruitment of participants aged 45-85 in 2010 and 35-74 in 2009, respectively, the age distribution of both COVID-19 sub-studies unsurprisingly skewed towards older adults [@raina_cohort_2019; @dummer_canadian_2018]. Between convenience samples, individuals who resided in highly materially deprived areas were notably underrepresented when using blood donations (representation ratio 0.4--0.6), but not when using outpatient labs (representation ratio 0.9-1.2). Donor eligibility criteria, along with the 'healthy donor effect' or other unmeasured socioeconomic factors, may homogenize the demographic composition of the sampled donor pool [@atsma_healthy_2011]. Rural regions had consistently worse representation compared to their urban counterparts in all studies, which may be related to urban-centric study recruitment patterns or willingness to travel for specimen collection (Figures 1-2). 
+
+<br>
+
+The study had several limitations. First, our analysis only considered representativeness by age, sex, race/ethnicity, urbanicity, and neighborhood deprivation. Many other sociodemographic dimensions are important considerations regarding representativeness in serosurveillance studies, particularly those related to health and disability. Indeed, we hypothesize a 'healthy participant' sampling bias may have led to underrepresentation of individuals with poor health and/or disability in all study populations except outpatient laboratories [@atsma_healthy_2011; @froom_healthy_1999]. Prior analyses of the pre-existing longitudinal cohorts included in our study have also indicated participants are more educated and/or have higher income than the general population [@tang_assessment_2022; @dummer_canadian_2018; @raina_cohort_2019], as are blood donors in the United States [@patel_sociodemographic_2019]. Second, the measurement of race/ethnicity differed between studies. Race/ethnicity options for CBS blood donors include four mutually exclusive categories, while the Ab-C, CCAHS-1, CanPath, CLSA, and census datasets permitted selection of multiple racial/ethnic identities. This necessitated dichotomizing the race/ethnicity variable as white or racialized minority and may have biased the CBS representation estimate if individuals who identified as mixed race/ethnicity selected their race/ethnicity as white during donation. Additionally, due to missing Indigenous identity data, we modified our representation assessment for the CLSA and CanPath studies by omitting Indigenous-identifying individuals from the census dataset. Our sensitivity analysis suggests this did not substantially impact our findings (Supplementary Figure S16). Third, we restricted our analysis to SARS-CoV-2 serostudies conducted within a single country and used an acceptability level of underrepresentation that is context-specific and open to interpretation. We focused on strata with fewer than 25 samples in our small cell count analysis, but this threshold was largely arbitrary. Fourth, we did not analyze factors shaping the sociodemographic composition of each study, including intentional oversampling. For example, the CCAHS-1 study used a complex stratified random sampling strategy that oversampled geographic regions with greater COVID-19 prevalence and less populated regions to improve estimate precision. Less populated areas of Canada often have fewer racialized minorities, which likely contributes to lower representation ratios [@statistics_canada_canadian_2020]. Understanding the causes and consequences of each study's sociodemographic composition requires more detailed analysis than is presented here. Finally, our study is not a comprehensive assessment of all SARS-CoV-2 serology studies conducted in Canada. Demographic groups excluded here have been evaluated elsewhere [@atkinson_canadian_2023].
+
+<br> Understanding variability in demographic representation between study designs is an important consideration when planning serosurveillance studies, which increasingly leverage pre-existing samples or study cohorts. In this study, we provide a simple metric to evaluate and compare the representativeness of study populations. We found that underrepresentation of racialized minorities and younger age groups was common and not restricted to convenience samples, which had better representation for some sociodemographic strata. This suggests that representative estimates could be obtained in resource-constrained settings by leveraging lower-cost approaches, such as existing blood or laboratory services, compared to large-scale probabilistically sampled serosurveys. Identifying coverage barriers is vital to support adequate representation and detection of disease trends within demographic subgroups. We also observed differences in the measurement of participant race/ethnicity between studies. This highlights the necessity for consistent, and sufficient, measurement of sociodemographic variables, along with the need to adopt a standardized approach to the measurement of self-identified race/ethnicity in Canada.
+
+{{< pagebreak >}}
+
+# Declarations
+
+**Funding:** This work was funded by the Government of Canada through the COVID-19 Immunity Task Force and by Canadian Blood Services (CBS).
+
+**Conflicts:** Text.
+
+**Ethics/Consent:** All studies analyzed were approved by a Research Ethics Board or Institutional Review Board of a Canadian institution as reported previously. This secondary analysis of six studies was approved by the McGill University Research Ethics Board (study number 22-03-077).
+
+**Data and materials:** The authors are not authorized to share individual-level data from any study, but mechanisms exist to request use of data for research studies. Data from Canadian Blood Services may be made available upon request, subject to internal review, privacy legislation, data sharing agreements, and research ethics approval. \[**ADD SENTENCE FOR EACH STUDY**\].
+
+**Code availability:** Analytical code will be available in a public repository upon publication.
+
+**Authors' contributions:** TBD.
+
+{{< pagebreak >}}
+
+# References
+
+::: {#refs}
+:::
+
+{{< pagebreak >}}
+
+# Tables
+
+::: {#thm-sample-t1}
+Summary of Canadian serological study designs included in the study. Serological specimens were collected from various regions across Canada between April 2020 - November 2023.
+
+```{r}
+
+```
+:::
+
+{{< pagebreak >}}
+
+::: {#thm-sample-t2}
+Percentage of study demographic subgroups with greater than 25 collected specimens after stratification. Date of sample collection was binned into 2-month intervals. Subgroups with counts above threshold value might produce more stable estimates when statistically adjusted. Study specimens were collected from various regions across Canada between April 2020 - November 2023.
+
+```{r}
+
+
+```
+:::
+
+{{< pagebreak >}}
+
+# Figures
+
+```{r}
+#| label: fig-sample-f1
+#| fig-cap: "Demographic representativeness of Canadian serological studies compared to the general population by sex, urbanicity, and racial/ethnic identity. Representativeness was calculated by dividing the proportion of study specimens collected from a subgroup by the proportion of population in the subgroup. Total population counts were estimated using the 2016 Canadian census.[@statistics_canada_census_2017] Study specimens were collected from various regions across Canada between April 2020 - November 2023. Bolded representation ratios indicate a subgroup was significantly underrepresented relative to the Canadian population."
+
+knitr::include_graphics("../4_output/figs/f1.pdf")
+
+```
+
+{{< pagebreak >}}
+
+```{r}
+#| label: fig-sample-f2
+#| fig-cap: "Sociodemographic representativeness of Canadian serological studies compared to the general population by age group, sex, urbanicity, racial/ethnic identity, and material deprivation quintile. Representativeness was calculated by dividing the proportion of study specimens collected from a subgroup by the proportion of population in the subgroup. Total population counts were estimated using the 2016 Canadian census.[@statistics_canada_census_2017] Material deprivation scores were only available for CBS, APL, and CCAHS-1 studies. Study specimens were collected from various regions across Canada between April 2020 - November 2023. Bolded representation ratios indicate a subgroup was significantly underrepresented relative to the Canadian population."
+
+knitr::include_graphics("../4_output/figs/f2_continuous1.pdf")
+
+```
+
+{{< pagebreak >}}
+
+# Supplemental Materials for 'Sociodemographic representativeness of COVID-19 serosurveillance studies with diverse recruitment strategies'
+
+Matthew J. Knight^1^, Yuan Yu^1^, Jiacheng Chen^1^, Sheila O'Brien^2,3^, David L. Buckeridge^1,4^, Carmen Charlton^5,6^, W. Alton Russell^1,4^
+
+<br>
+
+^1^School of Population and Global Health, McGill University, Montreal, Canada
+
+^2^Canadian Blood Services, Ottawa, Canada
+
+^3^School of Epidemiology and Public Health, University of Ottawa, Ottawa, Canada
+
+^4^COVID-19 Immunity Task Force, Montreal, Canada
+
+^5^Canadian Blood Services, Edmonton, Canada
+
+^6^Department of Laboratory Medicine and Pathology, University of Alberta, Edmonton, Canada
+
+{{< pagebreak >}}
+
+# Supplemental tables
+
+::: {#cor-sample-st1}
+Classification table of self-reported racial/ethnic identities. Participants who identified as non-white in race/ethnicity, or who identified as Indigenous, were classified as a racialized minority. Ambiguous or missing responses were removed for all analyses which included race/ethnicity as a stratum.
+
+```{r}
+# check txt file in onedrive:: causing error here.
+```
+:::
+
+{{< pagebreak >}}
+
+::: {#cor-sample-st2}
+Classification table of self-reported racial/ethnic identities provided by free text response in CLSA and CanPath studies. Participants who identified as non-white in race/ethnicity, or who identified as Indigenous, were classified as a racialized minority. Ambiguous or missing responses were removed for all analyses which included race/ethnicity as a stratum.
+
+```{r}
+
+```
+:::
+
+{{< pagebreak >}}
+
+::: {#cor-sample-st3}
+Summary of demographic characteristics by research study. Scores of 1 and 5 indicate the lowest and highest quantiles of deprivation, respectively. CCAHS-1 counts were rounded to base 50 according to data usage guidelines.
+
+```{r}
+#Filler space here
+```
+:::
+
+{{< pagebreak >}}
+
+::: {#cor-sample-st4}
+Sensitivity analysis on the percentage of study demographic subgroups with greater than 25 collected specimens after stratification with individuals identifying as mixed race/ethnicity (white and racialized minority) classified as white. Date of sample collection was binned into 2-month intervals. Subgroups with counts above threshold value might produce more stable estimates when statistically adjusted.
+
+```{r}
+
+```
+:::
+
+{{< pagebreak >}}
+
+{{< pagebreak >}}
+
+# Supplemental figures
+
+```{r}
+#| label: lem-sample-s1
+#| fig-cap: "**Figure S1**: Demographic composition of Canadian serological studies by participant age, sex, and urbanicity. Counts were calculated as the number of serological specimens contributed by each study subgroup. CBS tested 3410 donations from 17-year-old donors, but they were excluded from our analysis. CCAHS-1 counts were not included due to privacy regulations."
+
+knitr::include_graphics("../4_output/figs/supp_asu.pdf")
+
+```
+
+{{< pagebreak >}}
+
+```{r}
+#| label: lem-sample-s2
+#| fig-cap: "**Figure S2**: Demographic composition of Canadian serological studies by participant age, sex, and self-identified race/ethnicity. Counts were calculated as the number of serological specimens contributed by each study subgroup. CBS tested 3410 donations from 17-year-old donors, but they were excluded from our analysis. CCAHS-1 counts were not included due to privacy regulations."
+
+knitr::include_graphics("../4_output/figs/supp_asr.pdf")
+```
+
+{{< pagebreak >}}
+
+```{r}
+#| label: lem-sample-s3
+#| fig-cap: "**Figure S3**: Demographic composition of Canadian serological studies by participant sex and material deprivation quintile score. Counts were calculated as the number of serological specimens contributed by each study subgroup. Scores of 1 and 5 indicate the lowest and highest quintiles of deprivation, respectively. CCAHS-1 counts were not included due to privacy regulations."
+
+knitr::include_graphics("../4_output/figs/supp_sqm.pdf")
+
+```
+
+{{< pagebreak >}}
+
+```{r}
+#| label: lem-sample-s4
+#| fig-cap: "**Figure S4**: Demographic composition of Canadian serological studies by participant sex and social deprivation quintile score. Counts were calculated as the number of serological specimens contributed by each study subgroup. Scores of 1 and 5 indicate the lowest and highest quintiles of deprivation, respectively. CCAHS-1 counts were not included due to privacy regulations."
+
+knitr::include_graphics("../4_output/figs/supp_sqs.pdf")
+
+```
+
+{{< pagebreak >}}
+
+```{r}
+#| label: lem-sample-s5
+#| fig-cap: "**Figure S5**: Demographic representativeness of Canadian serological studies compared to the general population by sex and social deprivation quintile. Representativeness was calculated by dividing the proportion of study specimens collected from a subgroup by the proportion of population in the subgroup. Total population counts were estimated using the 2016 Canadian census.[@statistics_canada_census_2017] Social deprivation scores were only available for CBS, APL, and CCAHS-1 studies. Bolded representation ratios indicate a subgroup was significantly underrepresented relative to the Canadian population." 
+
+knitr::include_graphics("../4_output/figs/s1_sqs.pdf")
+
+```
+
+{{< pagebreak >}}
+
+```{r}
+#| label: lem-sample-s6
+#| fig-cap: "**Figure S6**: Demographic representativeness of CCAHS-1 serological study specimens collected from the Canadian territories compared to the general population by age group and sex. Representativeness was calculated by dividing the proportion of study specimens collected from a subgroup by the proportion of population in the subgroup. Total population counts were estimated using the 2016 Canadian census. [@statistics_canada_census_2017] Bolded representation ratios indicate a subgroup was significantly underrepresented relative to the Canadian population. "
+
+knitr::include_graphics("../4_output/figs/supp_astrr.pdf")
+
+```
+
+{{< pagebreak >}}
+
+```{r}
+#| label: lem-sample-s7
+#| fig-cap: "**Figure S7**: Sensitivity analysis on the demographic representativeness of Canadian serological studies compared to the general population by age group, sex, and racial/ethnic identity. Representativeness was calculated by dividing the proportion of study specimens collected from a subgroup by the proportion of population in the subgroup. Total population counts were estimated using the 2016 Canadian census.[@statistics_canada_census_2017] Study participants identifying as mixed race/ethnicity (white and racialized minority) were classified as white. Bolded representation ratios indicate a subgroup was significantly underrepresented relative to the Canadian population."
+
+knitr::include_graphics("../4_output/figs/supp_sensr1rr.pdf")
+
+```
+
+{{< pagebreak >}}
+
+```{r}
+#| label: lem-sample-s8
+#| fig-cap: "**Figure S8**: Sensitivity analysis on the demographic composition of Canadian serological studies by participant age, sex, and self-identified race/ethnicity. Counts were calculated as the number of serological specimens contributed by each study subgroup. Study participants identifying as mixed race/ethnicity (white and racialized minority) were classified as white. CCAHS-1 counts were not included due to privacy regulations."
+
+knitr::include_graphics("../4_output/figs/supp_sensr1.pdf")
+```
+
+{{< pagebreak >}}
+
+```{r}
+#| label: lem-sample-s9
+#| fig-cap: "**Figure S9**: Sensitivity analysis on the demographic representativeness of Canadian serological studies compared to the general population by age group, sex, and racial/ethnic identity. Representativeness was calculated by dividing the proportion of study specimens collected from a subgroup by the proportion of population in the subgroup. Total population counts were estimated using the 2016 Canadian census and included Indigenous-identifying individuals.[@statistics_canada_census_2017] Bolded representation ratios indicate a subgroup was significantly underrepresented relative to the Canadian population."
+
+knitr::include_graphics("../4_output/figs/supp_sens2rr.pdf")
+
+```
+
+```{r}
+#| label: lem-sample-s10
+#| fig-cap: "**Figure S10**: sex-urban-rural boot"
+knitr::include_graphics("../4_output/figs/boot_sur.pdf")
+```
+
+```{r}
+#| label: lem-sample-s11
+#| fig-cap: "**Figure S11**: sex-qm boot"
+knitr::include_graphics("../4_output/figs/boot_sqm.pdf")
+```
+
+```{r}
+#| label: lem-sample-s12
+#| fig-cap: "**Figure S12**: sex-qs boot"
+knitr::include_graphics("../4_output/figs/boot_sqs.pdf")
+```
+
+```{r}
+#| label: lem-sample-s13
+#| fig-cap: "**Figure S13**: age-sex-all boot"
+#knitr::include_graphics("../4_output/figs/boot_asa.pdf")
+```
+
+```{r}
+#| label: lem-sample-s14
+#| fig-cap: "**Figure S14**: age-sex-urban boot"
+knitr::include_graphics("../4_output/figs/boot_asu.pdf")
+```
+
+```{r}
+#| label: lem-sample-s15
+#| fig-cap: "**Figure S15**: age-sex-rural boot"
+knitr::include_graphics("../4_output/figs/boot_asr.pdf")
+```
+
+```{r}
+#| label: lem-sample-s16
+#| fig-cap: "**Figure S16**: age-sex-white boot"
+knitr::include_graphics("../4_output/figs/boot_asw.pdf")
+```
+
+```{r}
+#| label: fig-sample-s17
+#| fig-cap: "**Figure S17**: age-sex-racialized-minority boot"
+knitr::include_graphics("../4_output/figs/boot_asrm.pdf")
+```
+
+```{r}
+knitr::include_graphics("../4_output/figs/aarb_month.pdf")
+```
+
+```{r}
+knitr::include_graphics("../4_output/figs/f2s3_continuous1.pdf")
+```
+
+```{r}
+knitr::include_graphics("../4_output/figs/ddi_overall.pdf")
+```
+
+```{r}
+knitr::include_graphics("../4_output/figs/f2s3_continuous1.pdf")
+```
